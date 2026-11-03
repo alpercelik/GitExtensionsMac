@@ -157,7 +157,7 @@ private final class StashViewController: RetainingSplitViewController, NSWindowD
         addSplitViewItem(diffItem)
         diffController.selectionScope = .revision
         diffController.supportsDiffAppearance = true
-        diffController.difftasticAvailability = { [source] in await (source as? any RepositoryBrowsingDataSource)?.isDifftasticEnabled() ?? false }
+        diffController.difftasticAvailability = { [source] in await source.isDifftasticEnabled() }
         diffController.linePatchingSupported = { [weak self] in
             guard let self, !isBusy, let file = filesController.currentlySelectedFiles().first else { return false }
             return !file.isSubmodule && source is any RepositoryFileStatusDataSource

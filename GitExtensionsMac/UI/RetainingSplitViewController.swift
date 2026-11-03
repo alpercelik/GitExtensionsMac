@@ -119,7 +119,6 @@ class RetainingSplitViewController: NSViewController, NSSplitViewDelegate {
         scheduleRestoreAfterEnclosingResize()
     }
 
-
     var dividerPosition: CGFloat? { splitViewItems.count > 1 && !hasCollapsedItem ? leadingPaneThickness : nil }
 
     var primaryLength: CGFloat {

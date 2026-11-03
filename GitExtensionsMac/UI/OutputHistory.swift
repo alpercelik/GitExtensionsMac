@@ -1,11 +1,9 @@
 import AppKit
 import GitCommands
 
-
-
 @MainActor
 enum OutputHistoryRecording {
-    static func perform<T>(_ operation: () async throws -> T) async rethrows -> T {
+    static func perform<T>(_ operation: nonisolated(nonsending) () async throws -> T) async rethrows -> T {
         try await ProcessOutputHistory.recording.withValue(true, operation: operation)
     }
 }

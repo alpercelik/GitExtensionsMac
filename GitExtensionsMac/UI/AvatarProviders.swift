@@ -11,8 +11,6 @@ enum AvatarFallback: String, Codable, CaseIterable, Sendable {
     var gravatarName: String? { self == .authorInitials ? nil : rawValue.lowercased() }
 }
 
-
-
 struct AvatarPreferences: Codable, Equatable, Sendable {
     var provider: AvatarProvider = .none
     var fallback: AvatarFallback = .authorInitials
@@ -106,7 +104,6 @@ enum AvatarURLs {
         return URL(string: "https://avatars.githubusercontent.com/u/e?email=\(encode(email))&s=\(size)")!
     }
 
-
     static func template(_ template: String, email: String, name: String?, size: Int) -> String {
         var result = "", remainder = template[...]
         while let open = remainder.firstIndex(of: "{") {
@@ -130,8 +127,6 @@ enum AvatarURLs {
         return info[kCGImagePropertyPixelWidth] as? Int
     }
 }
-
-
 
 actor AvatarImageStore {
     private struct Key: Hashable { let email: String; let size: Int }
@@ -229,7 +224,6 @@ actor AvatarImageStore {
         var url: URL? = AvatarURLs.github(email: email, size: size)
         if let user = AvatarURLs.githubUsername(email), user.contains("[") {
 
-
             url = try? await RepositoryHostClient.publicUserAvatar(user, size: size, transport: transport)
         }
         if let url, let image = await download(url), size == 420 || AvatarURLs.pixelWidth(image) != 420 { return image }
@@ -287,8 +281,6 @@ final class AvatarService {
     }
     func clearCache() { Task { await configure(AppSettingsStore.shared.avatarPreferences, clear: true) } }
 }
-
-
 
 @MainActor
 final class AuthorAvatarView: NSView, NSMenuDelegate {

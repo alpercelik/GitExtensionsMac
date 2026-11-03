@@ -1,13 +1,9 @@
 import Foundation
 import GitExtensionsCore
 
-
-
 package enum RepositoryEditableFile: Sendable, Equatable {
     case gitIgnore, localExclude, gitAttributes, mailMap, gitConfig
 }
-
-
 
 package struct EditableFileText: Equatable, Sendable {
     package var text: String
@@ -22,7 +18,6 @@ package struct EditableFileText: Equatable, Sendable {
         self.exists = exists
     }
 }
-
 
 package protocol RepositoryFileEditingDataSource: Sendable {
 
@@ -58,7 +53,6 @@ package enum RepositoryFileEditorCommands {
         GitCommand(arguments: ["rev-parse", "--git-path", relativePath], accessesRemote: false, changesRepositoryState: false)
     }
 
-
     package static func ignoredFiles(_ patterns: [String]) -> GitCommand? {
         let patterns = patterns.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         guard !patterns.isEmpty else { return nil }
@@ -66,12 +60,10 @@ package enum RepositoryFileEditorCommands {
                           accessesRemote: false, changesRepositoryState: false)
     }
 
-
     package static func parseIgnoredFiles(_ output: String) -> [String] {
         var seen = Set<String>()
         return output.split(whereSeparator: { $0 == "\0" || $0 == "\n" }).map(String.init).filter { seen.insert($0).inserted }
     }
-
 
     package static func resolveGitPath(_ output: String, in directory: URL) -> URL {
         let path = output.trimmingCharacters(in: .newlines)
@@ -87,7 +79,6 @@ package enum EditableFileError: LocalizedError, Equatable {
         }
     }
 }
-
 
 package enum EditableFileIO {
 
@@ -114,9 +105,6 @@ package enum EditableFileIO {
         return EditableFileText(text: text, encoding: resolved, preamble: mark?.0 ?? [], exists: true)
     }
 
-
-
-
     package static func saveWithTrailingNewline(_ text: String, to url: URL, createDirectory: Bool) throws {
         var content = text
         if !content.hasSuffix("\n") { content += "\n" }
@@ -127,8 +115,6 @@ package enum EditableFileIO {
             try Data(content.utf8).write(to: url)
         }
     }
-
-
 
     package static func appendPatterns(_ patterns: [String], to url: URL) throws {
         try makeTemporarilyWritable(url) {
@@ -149,8 +135,6 @@ package enum EditableFileIO {
         }
     }
 
-
-
     package static func saveInPlace(_ text: String, to url: URL, encoding: RepositoryTextEncoding, preamble: [UInt8]) throws {
         guard FileManager.default.fileExists(atPath: url.path) else { throw EditableFileError.missing(url.path) }
 
@@ -160,8 +144,6 @@ package enum EditableFileIO {
         try handle.write(contentsOf: Data(preamble) + body)
         try handle.truncate(atOffset: UInt64(preamble.count + body.count))
     }
-
-
 
     package static func makeTemporarilyWritable(_ url: URL, _ action: () throws -> Void) throws {
         let manager = FileManager.default

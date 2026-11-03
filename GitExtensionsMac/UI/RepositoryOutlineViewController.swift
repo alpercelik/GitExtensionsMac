@@ -561,7 +561,6 @@ private final class RepositoryOutlineView: NSOutlineView {
     var onReturn: (() -> Void)?
     var onShortcut: ((String) -> Void)?
 
-
     var onToggleWithDescendants: ((Int) -> Void)?
 
     override func mouseDown(with event: NSEvent) {
@@ -1066,7 +1065,6 @@ final class RepositoryOutlineViewController: NSViewController, NSOutlineViewData
         onSelection?(node)
     }
 
-
     func toggleSelectionWithDescendants(row: Int) {
         guard let node = outlineView.item(atRow: row) as? RepositoryTreeNode else { return }
         let select = !outlineView.selectedRowIndexes.contains(row)
@@ -1076,7 +1074,6 @@ final class RepositoryOutlineViewController: NSViewController, NSOutlineViewData
         if select { outlineView.selectRowIndexes(rows, byExtendingSelection: true) }
         else { rows.forEach { outlineView.deselectRow($0) } }
     }
-
 
     func contextMenu(forRow row: Int) -> NSMenu {
         let menu = NSMenu()
@@ -1327,7 +1324,6 @@ final class RepositoryOutlineViewController: NSViewController, NSOutlineViewData
                 node.isMerged = false
             }
         }
-
 
         guard outlineView.numberOfRows > 0 else { return }
         outlineView.reloadData(forRowIndexes: IndexSet(integersIn: 0..<outlineView.numberOfRows),

@@ -9,6 +9,7 @@ package struct RepositoryLoadState: Sendable {
     package let revisionReadRequest: RevisionReadRequest
     package let aheadBehind: [String: AheadBehindData]
     package let monitoringURLs: [URL]
+    package let revisionChangeURLs: [URL]
 
     package init(
         identity: RepositoryIdentityState,
@@ -16,7 +17,7 @@ package struct RepositoryLoadState: Sendable {
         navigation: RepositoryNavigationState,
         status: RepositoryStatusSummary,
         revisionReadRequest: RevisionReadRequest,
-        aheadBehind: [String: AheadBehindData] = [:], monitoringURLs: [URL] = []
+        aheadBehind: [String: AheadBehindData] = [:], monitoringURLs: [URL] = [], revisionChangeURLs: [URL] = []
     ) {
         self.identity = identity
         self.references = references
@@ -25,6 +26,7 @@ package struct RepositoryLoadState: Sendable {
         self.revisionReadRequest = revisionReadRequest
         self.aheadBehind = aheadBehind
         self.monitoringURLs = monitoringURLs
+        self.revisionChangeURLs = revisionChangeURLs
     }
 }
 
@@ -81,6 +83,7 @@ package extension RepositoryLoadState {
 
 package protocol RepositoryBrowsingDataSource: Sendable {
     func loadRepositoryState() async throws -> RepositoryLoadState
+    func loadWorkingDirectoryStatus() async throws -> RepositoryStatusSummary
     func revisionReadRequest() async throws -> RevisionReadRequest
     func loadRevisionDetails(for commit: Commit) async throws -> RepositoryRevisionDetails
     func loadRepositoryFiles(for commit: Commit) async throws -> [RepositoryFileEntry]
@@ -99,6 +102,10 @@ package protocol RepositoryBrowsingDataSource: Sendable {
 
 package extension RepositoryBrowsingDataSource {
     func isDifftasticEnabled() async -> Bool { false }
+
+    func loadWorkingDirectoryStatus() async throws -> RepositoryStatusSummary {
+        try await loadRepositoryState().status
+    }
 
     func prepareFilePresentation(for commit: Commit, file: RepositoryFileEntry, encoding: RepositoryTextEncoding) async throws -> FilePreview<RepositoryFileContent> {
         .ready(try await loadFilePresentation(for: commit, file: file, encoding: encoding))

@@ -1,11 +1,9 @@
 import Foundation
 import GitExtensionsCore
 
-
 package enum FileStatusGroupKind: Hashable, Sendable {
     case diff, diffA, diffB, combined, range, grep
 }
-
 
 package struct FileStatusGroup: Hashable, Sendable, Identifiable {
     package let id: String
@@ -27,7 +25,6 @@ package struct FileStatusGroup: Hashable, Sendable, Identifiable {
 
     package var isGrep: Bool { kind == .grep }
 }
-
 
 package struct FileStatusDiffRequest: Sendable {
     package var revisions: [Commit]
@@ -59,7 +56,6 @@ package struct FileStatusDiffRequest: Sendable {
     }
 }
 
-
 package struct GitGrepOptions: Codable, Equatable, Sendable {
     package var userArguments = ""
     package var ignoreCase = false
@@ -70,7 +66,6 @@ package struct GitGrepOptions: Codable, Equatable, Sendable {
         self.matchWholeWord = matchWholeWord
     }
 }
-
 
 package protocol RepositoryFileStatusDataSource: Sendable {
 
@@ -131,13 +126,10 @@ package struct FileStatusApplyResult: Sendable {
     package let patch: String
 }
 
-
-
 package struct FileStatusPartialMutationError: LocalizedError {
     package let message: String
     package var errorDescription: String? { message }
 }
-
 
 package enum FileStatusContent: Sendable {
     case diff(FileDiff?)
@@ -177,7 +169,6 @@ package enum FileStatusCommands {
         return FileStatusSubmodule(first: first, second: second, isDirty: dirty)
     }
 
-
     package static func interactivePatch(path: String, stage: Bool) -> GitCommand {
         GitCommand(arguments: (stage ? ["add", "--patch"] : ["checkout", "-p"]) + ["--", path],
                    accessesRemote: false, changesRepositoryState: true)
@@ -192,12 +183,10 @@ package enum FileStatusCommands {
 
     package static let listFilesVerbose = GitCommand(arguments: ["ls-files", "-v", "-z"], accessesRemote: false, changesRepositoryState: false)
 
-
     package static func diff(first: RevisionID?, second: RevisionID?) -> GitCommand {
         GitCommand(arguments: ["diff", "--no-ext-diff", "--find-renames", "--find-copies", "--raw", "-z"] + revisionArguments(first: first, second: second),
                    accessesRemote: false, changesRepositoryState: false)
     }
-
 
     package static func revisionArguments(first: RevisionID?, second: RevisionID?) -> [String] {
         func option(_ revision: RevisionID?) -> String? {
@@ -243,7 +232,6 @@ package enum FileStatusCommands {
         GitCommand(arguments: ["merge-base", a.string, b.string], accessesRemote: false, changesRepositoryState: false)
     }
 
-
     package static func rangeCount(_ first: String, _ second: String) -> GitCommand {
         GitCommand(arguments: ["rev-list", "\(first)...\(second)", "--count", "--left-right"], accessesRemote: false, changesRepositoryState: false)
     }
@@ -253,7 +241,6 @@ package enum FileStatusCommands {
                    accessesRemote: false, changesRepositoryState: false)
     }
 
-
     package static func grepFiles(_ arguments: [String], revision: RevisionID, options: GitGrepOptions) throws -> GitCommand {
         var command = ["grep", "--files-with-matches", "-z"]
         command += try userArguments(options)
@@ -262,8 +249,6 @@ package enum FileStatusCommands {
         command.append("--")
         return GitCommand(arguments: command, accessesRemote: false, changesRepositoryState: false)
     }
-
-
 
     package static func grepFile(_ arguments: [String], revision: RevisionID, path: String, options: GitGrepOptions,
                                  viewer: FileDiffOptions = FileDiffOptions()) throws -> GitCommand {
@@ -292,7 +277,6 @@ package enum FileStatusCommands {
         }
     }
 
-
     package static func grepArguments(for text: String) throws -> [String] {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return [] }
@@ -300,7 +284,6 @@ package enum FileStatusCommands {
             .firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
         return usesExpressionOption ? try ScriptExecution.arguments(text) : ["-e", text]
     }
-
 
     package static func parseStatus(_ output: String) -> [ChangedFile] {
         var result: [ChangedFile] = []
@@ -360,7 +343,6 @@ package enum FileStatusCommands {
         return result
     }
 
-
     package static func parseRawDiff(_ output: String, staged: FileStagedStatus) -> [ChangedFile] {
         var result: [ChangedFile] = []
         let records = output.split(separator: "\0", omittingEmptySubsequences: true).map(String.init)
@@ -389,7 +371,6 @@ package enum FileStatusCommands {
         return result
     }
 
-
     package static func parseTree(_ output: String) -> [ChangedFile] {
         output.split(separator: "\0", omittingEmptySubsequences: true).compactMap { record in
             guard let tab = record.firstIndex(of: "\t") else { return nil }
@@ -401,7 +382,6 @@ package enum FileStatusCommands {
             return file
         }
     }
-
 
     package static func parseIndexTree(_ output: String) -> [ChangedFile] {
         var seen = Set<String>()
@@ -415,7 +395,6 @@ package enum FileStatusCommands {
             return file
         }
     }
-
 
     package static func parseListFilesVerbose(_ output: String, skipWorktree: Bool, assumeUnchanged: Bool) -> [ChangedFile] {
         output.split(separator: "\0", omittingEmptySubsequences: true).compactMap { line in
@@ -431,8 +410,6 @@ package enum FileStatusCommands {
             return file
         }
     }
-
-
 
     package static func parseGrepFile(_ output: String) -> [DiffLine] {
         var lines: [DiffLine] = []
@@ -463,7 +440,6 @@ package enum FileStatusCommands {
         return lines
     }
 
-
     package static func parseGrepFiles(_ output: String, revision: RevisionID, grepText: String) -> [ChangedFile] {
         output.split(separator: "\0", omittingEmptySubsequences: true).map { entry in
             var path = String(entry)
@@ -475,12 +451,10 @@ package enum FileStatusCommands {
         }
     }
 
-
     package static func parseRangeCount(_ output: String) -> (Int?, Int?) {
         let counts = output.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: "\t").map { Int($0) }
         return counts.count == 2 ? (counts[0], counts[1]) : (nil, nil)
     }
-
 
     package static func changedFile(path: String, oldPath: String?, status: Character, staged: FileStagedStatus) -> ChangedFile {
         let type: FileChangeType = switch status {
@@ -498,7 +472,6 @@ package enum FileStatusCommands {
         return file
     }
 }
-
 
 package struct FileStatusDiffCalculator {
     package var diffFiles: (_ first: RevisionID?, _ second: RevisionID, _ parentToSecond: ObjectID?) async throws -> [ChangedFile]
@@ -518,7 +491,6 @@ package struct FileStatusDiffCalculator {
         case .index: "Commit index"
         }
     }
-
 
     package static func stagedStatus(first: RevisionID?, second: RevisionID, parentToSecond: ObjectID?) -> FileStagedStatus {
         if first == .index && second == .workingDirectory { return .workTree }
@@ -542,7 +514,6 @@ package struct FileStatusDiffCalculator {
         }
         return groups
     }
-
 
     static func grepSummary(_ request: FileStatusDiffRequest) -> String {
         if request.grepArguments.count == 2, request.grepArguments[0] == "-e" { return "-e \"\(request.grepArguments[1])\"" }

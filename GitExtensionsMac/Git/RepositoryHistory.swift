@@ -2,13 +2,11 @@ import CoreGraphics
 import Foundation
 import GitExtensionsCore
 
-
 package enum RepositoryAnchor: String, Codable, Sendable, CaseIterable {
     case anchoredInTop = "Pinned"
     case anchoredInRecent = "AllRecent"
     case none = "None"
 }
-
 
 package struct RepositoryHistoryEntry: Codable, Equatable, Sendable {
     package var path: String
@@ -30,13 +28,11 @@ package struct RepositoryHistoryEntry: Codable, Equatable, Sendable {
     }
 }
 
-
 package enum ShorteningRecentRepoPathStrategy: String, Codable, Sendable, CaseIterable {
     case none = "None"
     case mostSignDir = "MostSignDir"
     case middleDots = "MiddleDots"
 }
-
 
 package struct RecentRepositorySettings: Codable, Equatable, Sendable {
 
@@ -79,7 +75,6 @@ package struct RecentRepositorySettings: Codable, Equatable, Sendable {
     }
 }
 
-
 package final class RecentRepoInfo {
     package let repo: RepositoryHistoryEntry
     package fileprivate(set) var caption: String?
@@ -102,7 +97,6 @@ package final class RecentRepoInfo {
 
     fileprivate var fullPath: Bool { dirInfo == nil }
 }
-
 
 package struct RecentRepoSplitter {
     package var maxTopRepositories: Int
@@ -135,7 +129,6 @@ package struct RecentRepoSplitter {
         let signDir = shorteningStrategy == .mostSignDir
         let n = min(maxTopRepositories, repositories.count)
 
-
         for repository in repositories {
             let topRepo = (topRepos.count < n && repository.anchor == .none) || repository.anchor == .anchoredInTop
             let info = RecentRepoInfo(repo: repository, topRepo: topRepo,
@@ -146,7 +139,6 @@ package struct RecentRepoSplitter {
             else { Self.addToOrderedSignDir(&ordered, info, shortenPath: signDir) }
             if let caption = info.caption { info.caption = RepositoryHistory.displayPath(caption, homeDirectory: homeDirectory) }
         }
-
 
         var r = topRepos.count - 1
         while topRepos.count > n && r >= 0 {
@@ -165,7 +157,6 @@ package struct RecentRepoSplitter {
         }
         return (sortTopRepos ? sorted(topRepo: true) : topRepos, sortRecentRepos ? sorted(topRepo: false) : recentRepos)
     }
-
 
     fileprivate struct OrderedCaptions {
         var values: [String: [RecentRepoInfo]] = [:]
@@ -292,7 +283,6 @@ package struct RecentRepoSplitter {
     }
 }
 
-
 package enum RepositoryHistory {
 
     package static func normalizedPath(_ path: String) -> String {
@@ -315,11 +305,9 @@ package enum RepositoryHistory {
         normalizedPath(left).caseInsensitiveCompare(normalizedPath(right)) == .orderedSame
     }
 
-
     package static func isInUserProfile(_ path: String, homeDirectory: String = NSHomeDirectory()) -> Bool {
         path.hasPrefix(homeDirectory)
     }
-
 
     package static func displayPath(_ path: String, homeDirectory: String = NSHomeDirectory()) -> String {
         guard isInUserProfile(path, homeDirectory: homeDirectory) else { return path }
@@ -327,7 +315,6 @@ package enum RepositoryHistory {
         if rest.hasSuffix("/") { rest.removeLast() }
         return "~" + rest
     }
-
 
     package static func adjustHistorySize(_ repositories: [RepositoryHistoryEntry], size: Int) -> [RepositoryHistoryEntry] {
         let anchoredCount = repositories.filter { $0.anchor != .none }.count
@@ -341,7 +328,6 @@ package enum RepositoryHistory {
         }
     }
 
-
     package static func addAsMostRecent(_ path: String, to history: [RepositoryHistoryEntry]) -> [RepositoryHistoryEntry] {
         let path = normalizedPath(path)
         var history = history
@@ -354,14 +340,12 @@ package enum RepositoryHistory {
         return history
     }
 
-
     package static func remove(_ path: String, from history: [RepositoryHistoryEntry]) -> [RepositoryHistoryEntry] {
         guard let index = history.firstIndex(where: { samePath($0.path, path) }) else { return history }
         var history = history
         history.remove(at: index)
         return history
     }
-
 
     package static func assignCategory(_ repository: RepositoryHistoryEntry, category: String?,
                                        favourites: [RepositoryHistoryEntry]) -> [RepositoryHistoryEntry] {
@@ -377,7 +361,6 @@ package enum RepositoryHistory {
         return favourites
     }
 
-
     package static func isValidGitWorkingDir(_ path: String, fileManager: FileManager = .default) -> Bool {
         let url = URL(fileURLWithPath: path, isDirectory: true)
         if fileManager.fileExists(atPath: url.appendingPathComponent(".git").path) { return true }
@@ -386,12 +369,10 @@ package enum RepositoryHistory {
             && fileManager.fileExists(atPath: url.appendingPathComponent("refs").path)
     }
 
-
     package static func isBareRepository(_ path: String, fileManager: FileManager = .default) -> Bool {
         let url = URL(fileURLWithPath: path, isDirectory: true)
         return !fileManager.fileExists(atPath: url.appendingPathComponent(".git").path) && isValidGitWorkingDir(path, fileManager: fileManager)
     }
-
 
     static func gitDirectory(_ path: String, fileManager: FileManager = .default) -> URL {
         let workingDir = URL(fileURLWithPath: path, isDirectory: true)
@@ -405,7 +386,6 @@ package enum RepositoryHistory {
         return value.hasPrefix("/") ? URL(fileURLWithPath: value, isDirectory: true)
             : workingDir.appendingPathComponent(value, isDirectory: true).standardizedFileURL
     }
-
 
     package static func currentBranchName(_ path: String, git: any GitCommandRunning) async -> String {
         let head = gitDirectory(path).appendingPathComponent("HEAD")
@@ -423,10 +403,16 @@ package enum RepositoryHistory {
         return String(result.standardOutputString.dropFirst("refs/heads/".count)).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    package static func symbolicBranchName(_ path: String) -> String? {
+        guard let contents = try? String(contentsOf: gitDirectory(path).appendingPathComponent("HEAD"), encoding: .utf8) else { return nil }
+        let prefix = "ref: refs/heads/"
+        guard contents.hasPrefix(prefix) else { return nil }
+        let name = String(contents.dropFirst(prefix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty || name == ".invalid" ? nil : name
+    }
 
     package static let detachedBranch = "(no branch)"
     package static let unknownBranchName = "???"
-
 
     package static func removeInvalid(_ history: [RepositoryHistoryEntry], isValid: (String) -> Bool) -> [RepositoryHistoryEntry] {
         history.filter { isValid($0.path) }

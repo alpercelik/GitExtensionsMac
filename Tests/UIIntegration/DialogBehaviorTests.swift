@@ -1510,6 +1510,38 @@ extension UIIntegrationTests {
             owner.close()
         }
 
+        @Test("Owned modal window leaves control tracking events alone") private static func testOwnedModalWindowTracking() async throws {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            let modal = Task { @MainActor in await OwnedModalWindow.runAsync(window, owner: nil) }
+            defer {
+                window.orderOut(nil)
+                modal.cancel()
+            }
+            let deadline = Date().addingTimeInterval(5)
+            while NSApp.modalWindow !== window, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+            try #require(NSApp.modalWindow === window, "runAsync starts a modal session for its window")
+            while NSApp.nextEvent(matching: .applicationDefined, until: .distantPast, inMode: .eventTracking, dequeue: true) != nil {}
+            let sentinel = try #require(NSEvent.otherEvent(
+                with: .applicationDefined, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber,
+                context: nil, subtype: 0, data1: 0x6765, data2: 0))
+            var pending: NSEvent?
+            var tracked = false
+            let probe = Timer(timeInterval: 0, repeats: false) { _ in
+                MainActor.assumeIsolated {
+                    NSApp.postEvent(sentinel, atStart: false)
+                    let tracking = Date().addingTimeInterval(0.2)
+                    while Date() < tracking { RunLoop.main.run(mode: .eventTracking, before: tracking) }
+                    pending = NSApp.nextEvent(matching: .applicationDefined, until: .distantPast, inMode: .eventTracking, dequeue: true)
+                    tracked = true
+                }
+            }
+            RunLoop.main.add(probe, forMode: .common)
+            while !tracked, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+            try #require(tracked, "tracking probe ran")
+            try #require(pending?.data1 == 0x6765, "the modal poll must not dequeue events while a control is tracking the mouse")
+        }
+
         @MainActor
         @Test("General and browse settings") private static func testGeneralAndBrowseSettings() async throws {
             try await RepositoryWorkflowTests.hostedSettings("general") { controller, store, apply in

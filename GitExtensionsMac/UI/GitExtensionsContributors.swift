@@ -1,6 +1,5 @@
 import Foundation
 
-
 enum GitExtensionsContributors {
     static let team = """
     Gerhard Olsson, Michael Seibt, Philippe Miossec, Igor Velikorossov
@@ -75,7 +74,6 @@ enum GitExtensionsContributors {
     static let designers = """
     Andréj Telle, Oliver Friedrich
     """
-
 
     static var all: [String] {
         [team, coders, translators, designers]

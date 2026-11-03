@@ -1,8 +1,6 @@
 import Foundation
 import GitExtensionsCore
 
-
-
 extension FileStatusCommands {
 
     package static func hasFilesWhichMayBeDeleted(_ files: [ChangedFile], root: URL) -> Bool {
@@ -37,7 +35,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         return result
     }
 
-
     private static func errorItem(_ message: String) -> ChangedFile {
         var file = ChangedFile(id: "error:\(message)", path: message.trimmingCharacters(in: .whitespacesAndNewlines),
                                oldPath: nil, changeType: .modified, additions: 0, deletions: 0)
@@ -45,7 +42,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         file.isUnchanged = true
         return file
     }
-
 
     private func workingDirectoryStatus(showUntracked: Bool, showSkipWorktree: Bool) async throws -> [ChangedFile] {
         let result = try await run(FileStatusCommands.status(showUntracked: showUntracked))
@@ -61,7 +57,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         }
         return files
     }
-
 
     package func fileStatusDiff(first: RevisionID?, second: RevisionID, parentToSecond: ObjectID?,
                                 showSkipWorktree: Bool, showUntracked: Bool) async throws -> [ChangedFile] {
@@ -84,7 +79,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         }
         return files
     }
-
 
     package func fileStatusTree(_ revision: RevisionID) async throws -> [ChangedFile] {
         switch revision {
@@ -282,7 +276,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         }
     }
 
-
     package func resetFiles(to revision: RevisionID, items: [ChangedFile], resetAndDelete: Bool) async throws -> String {
         guard revision == .index || revision.objectID != nil else { return "" }
         let root = try fileStatusRoot()
@@ -354,8 +347,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         _ = try await runChecked(["rm", "--cached", "--", path])
     }
 
-
-
     package func move(from oldName: String, to newName: String, isFolder: Bool) async throws {
         guard FileStatusCommands.validateMove(oldName: oldName, newName: newName) else { return }
         let root = try fileStatusRoot()
@@ -366,8 +357,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         let target = isFolder && !newName.hasSuffix("/") ? newName + "/" : newName
         _ = try await runChecked(["mv", oldName, target])
     }
-
-
 
     package func cherryPickChanges(group: FileStatusGroup, file: ChangedFile) async throws -> FileStatusApplyResult {
         let patch: Data
@@ -385,7 +374,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         let output = (result.standardOutputString + result.standardErrorString).trimmingCharacters(in: .whitespacesAndNewlines)
         return FileStatusApplyResult(succeeded: result.succeeded, output: output, patch: String(decoding: patch, as: UTF8.self))
     }
-
 
     package func applyLinePatch(_ kind: FileStatusLinePatchKind, file: ChangedFile, diff: FileDiff, lineIDs: Set<String>) async throws -> FileStatusApplyResult {
         let isNew = file.changeType == .added
@@ -538,8 +526,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         return changed
     }
 
-
-
     private static func difftoolPrefix(customTool: String?, externalCommand: String?) -> [String] {
         var arguments = ["difftool"]
         if let customTool, !customTool.isEmpty { arguments.append("--tool=\(customTool)") }
@@ -569,7 +555,6 @@ extension GitRepositoryModule: RepositoryFileStatusDataSource {
         let arguments = Self.difftoolPrefix(customTool: customTool, externalCommand: externalCommand) + [firstBlob, secondBlob]
         _ = try await runChecked(arguments, changes: false)
     }
-
 
     package func loadDiffTools() async throws -> [String] {
         if let task = diffToolDiscoveryTask { return await task.value }

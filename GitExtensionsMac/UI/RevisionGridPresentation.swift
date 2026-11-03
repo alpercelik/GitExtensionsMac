@@ -2,7 +2,6 @@ import Foundation
 import GitCommands
 import GitExtensionsCore
 
-
 enum RevisionGridPresentation {
 
     static func relativeDate(now: Date, date: Date) -> String {
@@ -19,7 +18,6 @@ enum RevisionGridPresentation {
         return text(Int((Double(days) / 365).rounded(.toNearestOrEven)), "year")
     }
 
-
     static func absoluteDate(_ date: Date, seconds: Bool = true) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -27,14 +25,12 @@ enum RevisionGridPresentation {
         return formatter.string(from: date)
     }
 
-
     static func dateText(_ commit: Commit, showAuthorDate: Bool, relative: Bool, now: Date = Date()) -> String {
         guard !commit.isArtificial else { return "" }
         let date = showAuthorDate ? commit.authorDate : commit.commitDate
         guard date != .distantPast, date != .distantFuture else { return "" }
         return relative ? relativeDate(now: now, date: date) : absoluteDate(date)
     }
-
 
     static func dateToolTip(_ commit: Commit) -> String? {
         guard !commit.isArtificial else { return nil }
@@ -45,7 +41,6 @@ enum RevisionGridPresentation {
             + "\(absoluteDate(commit.commitDate, seconds: false)) \(commit.committerName) committed"
     }
 
-
     static func authorToolTip(_ commit: Commit) -> String? {
         guard !commit.isArtificial else { return nil }
         if commit.authorName == commit.committerName && commit.authorEmail == commit.committerEmail {
@@ -54,13 +49,11 @@ enum RevisionGridPresentation {
         return "\(commit.authorName) <\(commit.authorEmail)> authored\n\(commit.committerName) <\(commit.committerEmail)> committed"
     }
 
-
     static func commitIDText(_ commit: Commit, width: CGFloat, characterWidth: CGFloat) -> String {
         guard let objectID = commit.objectID, characterWidth > 0 else { return "" }
         let count = Int((width - 8) / characterWidth)
         return count > 1 ? String(objectID.string.prefix(min(count, objectID.string.count))) : ""
     }
-
 
     static func bodyAndNotes(_ bodyOrSubject: String, notes: String) -> String {
         guard !notes.isEmpty else { return bodyOrSubject }
@@ -69,12 +62,10 @@ enum RevisionGridPresentation {
         return result
     }
 
-
     static func fullMessage(_ commit: Commit, notesInSeparateColumn: Bool) -> String {
         let message = commit.body.isEmpty ? commit.subject : commit.subject + "\n" + commit.body
         return notesInSeparateColumn ? message : bodyAndNotes(message, notes: commit.notes)
     }
-
 
     static func bodySuffix(_ commit: Commit, showBody: Bool, notesInSeparateColumn: Bool) -> String {
         guard showBody else { return "" }
@@ -82,7 +73,6 @@ enum RevisionGridPresentation {
             .split(separator: "\n", omittingEmptySubsequences: true)
         return lines.dropFirst().map { " " + $0 }.joined()
     }
-
 
     static func summary(_ body: String) -> String? {
         guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
@@ -94,8 +84,6 @@ enum RevisionGridPresentation {
         while lines.last?.isEmpty == true { lines.removeLast() }
         return lines.joined(separator: "\n")
     }
-
-
 
     static func referenceToolTip(_ hit: RevisionLabelHit, aheadBehind: (RevisionReference) -> AheadBehindData?,
                                  showTooltips: Bool) -> String? {
@@ -134,7 +122,6 @@ enum RevisionGridPresentation {
 
     private static func shortRemote(_ ref: String) -> String { ref.hasPrefix("refs/remotes/") ? String(ref.dropFirst(13)) : ref }
 
-
     static func messageToolTip(_ commit: Commit, notesInSeparateColumn: Bool,
                                aheadBehind: (RevisionReference) -> AheadBehindData? = { _ in nil },
                                artificialCounts: RevisionChangeCounts? = nil, showArtificialCounts: Bool = true) -> String? {
@@ -155,7 +142,6 @@ enum RevisionGridPresentation {
         return text
     }
 
-
     static func sortedReferences(_ references: [RevisionReference]) -> [RevisionReference] {
         references.sorted { rank($0) == rank($1) ? $0.name.utf8.lexicographicallyPrecedes($1.name.utf8) : rank($0) < rank($1) }
     }
@@ -169,9 +155,6 @@ enum RevisionGridPresentation {
         case .tag, .stash: 5
         }
     }
-
-
-
 
     static func laneInfo(layout: RevisionGraphLayout, row: Int, lane: Int, commits: [RevisionID: Commit]) -> String {
         guard let located = layout.node(atRow: row, lane: lane) else { return "" }
@@ -196,7 +179,6 @@ enum RevisionGridPresentation {
         return text
     }
 
-
     private static func graphShortID(_ id: RevisionID) -> String {
         switch id {
         case .workingDirectory: String(repeating: "1", count: 8)
@@ -204,7 +186,6 @@ enum RevisionGridPresentation {
         case .object(let objectID): objectID.shortString
         }
     }
-
 
     struct BranchFinder {
         private(set) var committedTo: String?
@@ -241,7 +222,6 @@ enum RevisionGridPresentation {
         }
     }
 
-
     static func parseMergeMessage(_ subject: String, appendPullRequest: Bool) -> (into: String?, with: String?) {
         let pattern = #"^merged? (pull request (?<pr>.*) from )?(.*branch |tag )?'?(?<with>[^ ']*[^ '.])'?( of [^ ]*[^ .])?( into (?<into>.*[^.]))?\.?$"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
@@ -257,12 +237,10 @@ enum RevisionGridPresentation {
         return (group("into") ?? "master", with)
     }
 
-
     static func hasAutosquashMarker(_ subject: String) -> Bool {
         subject.hasPrefix("fixup!") || subject.hasPrefix("squash!") || subject.hasPrefix("amend!")
     }
 }
-
 
 struct AuthorRevisionHighlighting {
     private(set) var authorEmailToHighlight: String?

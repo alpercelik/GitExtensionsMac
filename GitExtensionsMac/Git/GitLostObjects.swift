@@ -1,11 +1,9 @@
 import Foundation
 import GitExtensionsCore
 
-
 package enum LostObjectType: Sendable, Equatable {
     case commit, blob, tree, tag, other
 }
-
 
 package struct LostObject: Identifiable, Equatable, Sendable {
     package let objectType: LostObjectType
@@ -31,10 +29,8 @@ package struct LostObject: Identifiable, Equatable, Sendable {
         self.tagName = tagName
     }
 
-
     package var isCommitOrTag: Bool { objectType == .commit || objectType == .tag }
 }
-
 
 package struct LostObjectsOptions: Equatable, Sendable {
     package var unreachable = false
@@ -88,7 +84,6 @@ package enum LostObjectsCommands {
 
     package static let metadataBatchSize = 30_000 / (40 + 1)
 
-
     package static func parse(_ line: String) -> LostObject? {
         let kinds = ["dangling", "missing", "unreachable"]
         let types: [String: LostObjectType] = ["commit": .commit, "blob": .blob, "tree": .tree, "tag": .tag]
@@ -110,7 +105,6 @@ package enum LostObjectsCommands {
         return LostObject(objectType: type, objectID: id, rawType: rawType)
     }
 
-
     package static func fillCommit(_ object: inout LostObject, metadata: String) {
         let fields = metadata.split(separator: "\u{1F}", maxSplits: 4, omittingEmptySubsequences: false).map(String.init)
         guard fields.count == 5, !fields[1].isEmpty, let seconds = TimeInterval(fields[3]) else { return }
@@ -119,7 +113,6 @@ package enum LostObjectsCommands {
         object.date = Date(timeIntervalSince1970: seconds)
         if let first = fields[4].split(separator: " ").first { object.parent = try? ObjectID.parse(String(first)) }
     }
-
 
     package static func fillTag(_ object: inout LostObject, catFile: String) {
         let lines = catFile.components(separatedBy: "\n")
@@ -139,7 +132,6 @@ package enum LostObjectsCommands {
         object.date = Date(timeIntervalSince1970: seconds)
     }
 
-
     private static let languagesStartOfFile: [(String, String)] = [
         (#"{\rtf"#, "rtf"), ("{", "json"), ("#include", "cpp"), ("import {", "js"), ("import * as", "js"), ("import \"", "js"),
         ("export ", "js"), ("import ", "java"), ("from", "py"), ("package", "go"), ("namespace ", "fs"), ("#!", "sh"),
@@ -151,15 +143,12 @@ package enum LostObjectsCommands {
         ("FLIF", "flif"), ("␚Eß£", "mkv"), ("<", "xml")
     ]
 
-
     package static func guessFileType(_ data: Data) -> String {
         let content = (String(data: data.prefix(64), encoding: .isoLatin1) ?? "").lowercased()
         return languagesStartOfFile.first { content.hasPrefix($0.0.lowercased()) }?.1 ?? "txt"
     }
 
-
     package static func guessFileName(_ data: Data, id: ObjectID) -> String { "LOST_FOUND_\(id.string).\(guessFileType(data))" }
-
 
     package static let fileTypesEquivalences: [String: [String]] = [
         "js": ["ts", "jsx", "tsx"], "html": ["php", "cshtml"], "cpp": ["c"],
@@ -168,11 +157,9 @@ package enum LostObjectsCommands {
         "doc": ["xls", "ppt", "msi"], "md": ["sh", "yml"], "txt": ["csv", "css", "md", "yml"]
     ]
 
-
     package static let binaryExtensions = [".avi", ".bmp", ".dat", ".bin", ".dll", ".doc", ".docx", ".ppt", ".pps", ".pptx",
                                            ".ppsx", ".dwg", ".exe", ".gif", ".ico", ".jpg", ".jpeg", ".mpg", ".mpeg", ".msi",
                                            ".pdf", ".png", ".pdb", ".sc1", ".tif", ".tiff", ".vsd", ".vsdx", ".xls", ".xlsx", ".odt"]
-
 
     package static func convertCrLfToWorktree(_ buffer: Data) -> Data {
         let bytes = [UInt8](buffer)
@@ -204,9 +191,7 @@ package enum LostObjectsCommands {
         return Data(output)
     }
 
-
     package static func isBinaryContent(_ data: Data) -> Bool { data.lazy.filter { $0 == 0 }.count > 5 }
-
 
     package static func binaryAccordingToAttributes(_ output: String) -> Bool? {
         let diffValues: Set<String> = ["set", "astextplain", "ada", "bibtext", "cpp", "csharp", "css", "dts", "elixir", "fortran",
@@ -351,7 +336,6 @@ extension GitRepositoryModule: RepositoryLostObjectsDataSource {
         return result.succeeded && result.standardOutputString.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "true"
     }
 }
-
 
 package enum FixedPatchLines {
     private static let headerPrefixes = ["diff --git ", "diff --cc ", "index ", "--- ", "+++ ", "new file mode", "deleted file mode",

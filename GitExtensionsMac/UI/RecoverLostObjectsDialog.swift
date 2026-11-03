@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 @MainActor
 final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDelegate, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
     enum Strings {
@@ -23,7 +22,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         static let seemingly = "seemingly"
         static func tagsCreated(_ count: Int) -> String { "\(count) Tags created.\n\nDo not forget to delete these tags when finished." }
     }
-
 
     struct Actions {
         var runProcess: (_ window: NSWindow, _ operation: @escaping HostingProcessDialog.Operation) async -> Bool
@@ -85,12 +83,8 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         LostObjectsOptions(unreachable: unreachable.state == .on, fullCheck: fullCheck.state == .on, noReflogs: noReflogs.state == .on)
     }
 
-
-
     private func makeContent() -> NSView {
         let root = NSView()
-
-
 
         let help = NSTextField(labelWithString: Strings.help)
         help.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -119,7 +113,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         top.edgeInsets = NSEdgeInsets(top: 5, left: 8, bottom: 5, right: 8)
         for view in [top, labels, optionsStack] { view.setHuggingPriority(.required, for: .vertical) }
         bottomHugging = top
-
 
         let columns: [(String, String, CGFloat)] = [("check", "", 22), ("date", "Date", 56), ("type", "Type", 58), ("subject", "Subject", 200),
                                                    ("author", "Author", 150), ("hash", "Hash", 60), ("parent", "Parent(s) hashs", 60)]
@@ -165,7 +158,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         scroll.hasHorizontalScroller = true
         scroll.borderType = .bezelBorder
 
-
         diffViewer.supportedFileCommands = []
         for view in [diffViewer.view, fileViewer.view] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -185,7 +177,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         split.addArrangedSubview(scroll)
         split.addArrangedSubview(previewContainer)
         split.setHoldingPriority(.defaultLow + 1, forSubviewAt: 0)
-
 
         func button(_ title: String, _ selector: Selector, id: String) -> NSButton {
             let button = NSButton(title: title, target: self, action: selector)
@@ -237,7 +228,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
     private weak var splitView: NSSplitView?
     private var didPositionSplitter = false
 
-
     override func showWindow(_ sender: Any?) {
         super.showWindow(sender)
         guard !didPositionSplitter, let window, let splitView else { return }
@@ -246,10 +236,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         splitView.setPosition(700, ofDividerAt: 0)
         DispatchQueue.main.async { [weak splitView] in splitView?.setPosition(700, ofDividerAt: 0) }
     }
-
-
-
-
 
     @discardableResult
     func updateLostObjects() async -> Bool {
@@ -281,7 +267,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         return true
     }
 
-
     func updateFilteredLostObjects() {
         checked = []
         previewedID = nil
@@ -297,7 +282,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         if !displayed.isEmpty { table.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false) } else { clearPreview() }
         if showOther { detectBlobTypes() }
     }
-
 
     private func detectBlobTypes() {
         let blobs = lostObjects.filter { $0.objectType == .blob && !detectedBlobs.contains($0.objectID) }
@@ -352,9 +336,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         return displayed.indices.contains(row) ? displayed[row] : nil
     }
 
-
-
-
     private func clearPreview() {
         defaultFileName = nil
         diffViewer.view.isHidden = true
@@ -384,8 +365,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
             fileViewer.apply(content: FileContentDecoder.decode(data, path: name, requestedEncoding: .automatic), revisionLabel: item.objectID.shortString)
         }
     }
-
-
 
     func numberOfRows(in tableView: NSTableView) -> Int { displayed.count }
 
@@ -439,7 +418,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         Task { @MainActor [weak self] in await self?.previewCurrentItem() }
     }
 
-
     func tableView(_ tableView: NSTableView, didClick tableColumn: NSTableColumn) {
         guard tableColumn.identifier.rawValue == "check" else { return }
         let all = Set(displayed.map(\.objectID))
@@ -458,16 +436,12 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         table.reloadData()
     }
 
-
     @objc private func doubleClicked() {
         guard table.clickedRow >= 0, table.clickedColumn != 0 else { return }
         viewCurrentItem()
     }
 
-
-
     @objc private func optionChanged() { Task { await updateLostObjects() } }
-
 
     @objc private func showCommitsChanged() {
         if showCommitsAndTags.state == .off && showOtherObjects.state == .off { showOtherObjects.state = .on }
@@ -478,8 +452,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         if showCommitsAndTags.state == .off && showOtherObjects.state == .off { showCommitsAndTags.state = .on }
         updateFilteredLostObjects()
     }
-
-
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
@@ -513,7 +485,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
     }
 
     @objc private func viewClicked() { viewCurrentItem() }
-
 
     func viewCurrentItem() {
         guard let item = currentItem else { return }
@@ -558,7 +529,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         NSPasteboard.general.setString(parent.string, forType: .string)
     }
 
-
     @objc func saveAsClicked() {
         guard let item = currentItem, item.objectType == .blob, let window else { return }
         let name = defaultFileName ?? "\(item.objectID.string)_LOST_FOUND.txt"
@@ -575,8 +545,6 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
             }
         }
     }
-
-
 
     @objc private func saveObjectsClicked() {
         guard let window else { return }
@@ -618,13 +586,11 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
         }
     }
 
-
     func deleteLostFoundTags() async {
         for name in (try? await source.lostFoundTagNames()) ?? [] { try? await actions.deleteTag(name) }
     }
 
     @objc private func restoreClicked() { Task { await restoreSelectedObjects() } }
-
 
     func restoreSelectedObjects() async {
         guard let window else { return }
@@ -663,11 +629,9 @@ final class RecoverLostObjectsWindowController: NSWindowController, NSWindowDele
     }
 }
 
-
 private final class CapturedResult: @unchecked Sendable {
     var result: GitCommandResult?
 }
-
 
 private final class LostObjectsParentHeaderCell: NSTableHeaderCell {
     override func titleRect(forBounds rect: NSRect) -> NSRect { rect.insetBy(dx: 3, dy: 2) }
@@ -701,7 +665,6 @@ final class LostObjectsTableView: NSTableView {
         super.keyDown(with: event)
     }
 }
-
 
 @MainActor
 final class ReadOnlyTextWindowController: NSWindowController, NSWindowDelegate {

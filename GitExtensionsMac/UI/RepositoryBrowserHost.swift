@@ -11,7 +11,6 @@ enum RepositoryBrowserLaunch {
     case commandLineError(Error)
 }
 
-
 struct FileHistoryBrowseRequest: Equatable {
     let path: String
     var filterRevision: ObjectID?
@@ -54,7 +53,6 @@ struct RepositoryBrowserHost: NSViewControllerRepresentable {
 
     func updateNSViewController(_ nsViewController: ApplicationHostViewController, context: Context) {}
 }
-
 
 @MainActor
 enum ApplicationLifecycle {
@@ -161,6 +159,8 @@ final class ApplicationHostViewController: NSViewController {
         if checksSettingsAtStartup, !didDispatchCommandLine, !didCheckStartupSettings, let window = view.window {
             didCheckStartupSettings = true
             startupSettingsTask = Task { @MainActor in
+                await ApplicationErrorReporter.reportPreviousCrash(owner: window)
+                guard !Task.isCancelled else { return }
                 await GitUICommands.checkStartupSettings(owner: window)
             }
         }
@@ -245,17 +245,14 @@ final class ApplicationHostViewController: NSViewController {
         if CommandLineSession.active { NSApp.terminate(nil) }
     }
 
-
     var dashboard: DashboardViewController? { activeController as? DashboardViewController }
 
     private var browser: RepositoryBrowserViewController? { activeController as? RepositoryBrowserViewController }
-
 
     private var toolsWorkingDirectory: URL {
         browser?.networkContext.map { URL(fileURLWithPath: $0.repository.path, isDirectory: true) }
             ?? FileManager.default.homeDirectoryForCurrentUser
     }
-
 
     private func performShellCommand(_ command: BrowserCommand) -> Bool {
         switch command {
@@ -350,7 +347,6 @@ final class ApplicationHostViewController: NSViewController {
             child.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
     }
-
 
     private func presentOpenRepositoryDialog() {
         guard let window = view.window else { return }

@@ -2,8 +2,6 @@ import Foundation
 import GitCommands
 import GitExtensionsCore
 
-
-
 enum CommitInfoPresentation {
 
     enum Link: Equatable {
@@ -31,7 +29,6 @@ enum CommitInfoPresentation {
             return components.url ?? URL(string: "gitext://\(command)")!
         }
 
-
         init?(url: URL) {
             guard url.scheme == "gitext" else {
                 self = .external(url)
@@ -55,7 +52,6 @@ enum CommitInfoPresentation {
         }
     }
 
-
     struct Run: Equatable {
         let text: String
         let link: Link?
@@ -66,8 +62,6 @@ enum CommitInfoPresentation {
         let label: String
         let value: [Run]
     }
-
-
 
     static func header(_ commit: Commit, children: [RevisionID], now: Date = Date()) -> [HeaderRow] {
         let author = user(commit.authorName, commit.authorEmail)
@@ -91,7 +85,6 @@ enum CommitInfoPresentation {
         }
         return rows
     }
-
 
     static func plainHeader(_ rows: [HeaderRow]) -> String {
         rows.filter { !["Child", "Children", "Parent", "Parents"].contains($0.label) }.map { row in
@@ -125,11 +118,9 @@ enum CommitInfoPresentation {
         }
     }
 
-
     static func dateText(_ date: Date, now: Date) -> String {
         "\(relativeDate(now: now, date: date)) (\(fullDate(date)))"
     }
-
 
     static func fullDate(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -137,7 +128,6 @@ enum CommitInfoPresentation {
         formatter.timeStyle = .medium
         return formatter.string(from: date)
     }
-
 
     static func relativeDate(now: Date, date: Date) -> String {
         let seconds = Int(now.timeIntervalSince1970.rounded(.down)) - Int(date.timeIntervalSince1970.rounded(.down))
@@ -153,9 +143,6 @@ enum CommitInfoPresentation {
         return text(Int((Double(days) / 365).rounded(.toNearestOrEven)), "year")
     }
 
-
-
-
     static func bodyAndNotes(_ body: String, notes: String) -> String {
         guard !notes.isEmpty else { return body }
         var result = body.isEmpty ? "" : body + "\n"
@@ -164,7 +151,6 @@ enum CommitInfoPresentation {
         return result
     }
 
-
     static func hashCandidates(in text: String) -> [(range: Range<String.Index>, hash: String)] {
         guard let regex = try? NSRegularExpression(pattern: #"\b[a-f\d]{7,40}\b(?![^@\s]*@)"#) else { return [] }
         return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
@@ -172,11 +158,8 @@ enum CommitInfoPresentation {
         }
     }
 
-
-
     static let maximumDisplayedLinesIfLimited = 12
     static let maximumDisplayedRefsIfLimited = 10
-
 
     static func branchesInfo(_ branches: [String], preferences: CommitInfoPreferences, limit: Bool) -> [Run] {
         let remotePrefix = "remotes/"
@@ -210,7 +193,6 @@ enum CommitInfoPresentation {
         }, prefix: "Contained in branches:", empty: "Contained in no branch", what: "branches", truncated: truncated)
     }
 
-
     static func tagsInfo(_ tags: [String], limit: Bool) -> [Run] {
         let truncate = limit && tags.count > maximumDisplayedLinesIfLimited
         let shown = truncate ? Array(tags.prefix(maximumDisplayedRefsIfLimited)) : tags
@@ -229,7 +211,6 @@ enum CommitInfoPresentation {
         return runs
     }
 
-
     static func describeInfo(_ description: RepositoryCommitDescription) -> [Run] {
         guard !description.precedingTag.isEmpty else { return [Run("Derives from no tag")] }
         var runs = [Run("Derives from tag: "), Run(description.precedingTag, link: .tag(description.precedingTag))]
@@ -237,11 +218,9 @@ enum CommitInfoPresentation {
         return runs
     }
 
-
     static func annotatedTagsInfo(tagNames: [String], messages: [String: String], order: [String: Int]) -> [(tag: String, message: String)] {
         sortTags(tagNames, order: order).compactMap { tag in messages[tag].map { (tag, $0) } }
     }
-
 
     static func sortTags(_ tags: [String], order: [String: Int]) -> [String] {
         func index(_ tag: String) -> Int {
@@ -254,10 +233,8 @@ enum CommitInfoPresentation {
         }.map(\.element)
     }
 
-
     static let prioritizedBranchNames = "main[^/]*|master[^/]*|release/.*"
     static let prioritizedRemoteNames = "origin|upstream"
-
 
     static func priorityIndex(_ key: String, patterns: String) -> Int? {
         let regexes = patterns.split(separator: ";").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }

@@ -1,8 +1,6 @@
 import Foundation
 import GitExtensionsCore
 
-
-
 package protocol RepositorySparseWorkingCopyDataSource: Sendable {
 
     func isSparseCheckoutEnabled() async throws -> Bool
@@ -25,12 +23,10 @@ package enum SparseWorkingCopyCommands {
         GitCommand(arguments: ["config", "--local", settingName, enabled ? "true" : "false"], accessesRemote: false, changesRepositoryState: true)
     }
 
-
     package static func isEnabled(_ value: String) -> Bool {
         value.trimmingCharacters(in: .newlines).caseInsensitiveCompare("true") == .orderedSame
     }
 }
-
 
 package enum SparseWorkingCopyRules {
 
@@ -40,20 +36,15 @@ package enum SparseWorkingCopyRules {
             .filter { !$0.isEmpty && !$0.hasPrefix("#") }
     }
 
-
-
     package static func adjustmentNeeded(_ text: String) -> Adjustment? {
         let rules = activeRules(text)
         if rules.allSatisfy({ $0 == "/*" }) { return nil }
         return Adjustment(isCurrentRuleSetEmpty: rules.isEmpty)
     }
 
-
     package struct Adjustment: Equatable {
         package let isCurrentRuleSetEmpty: Bool
     }
-
-
 
     package static func adjustedForDisabling(_ text: String) -> String {
         let lines = text.split(separator: "\n", omittingEmptySubsequences: true).map(String.init).map { line -> String in

@@ -271,7 +271,6 @@ package final class GitRepositoryCreator: RepositoryCreating, @unchecked Sendabl
     }
 }
 
-
 package enum CloneSourcePath {
     package static func isAbsoluteURI(_ value: String) -> Bool {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)

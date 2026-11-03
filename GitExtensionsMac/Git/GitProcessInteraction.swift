@@ -159,7 +159,7 @@ final class GitAskPassBridge: @unchecked Sendable {
         self.directory = directory
         self.scriptURL = scriptURL
         requestDescriptor = descriptor
-        source = DispatchSource.makeReadSource(fileDescriptor: descriptor, queue: DispatchQueue(label: "com.gitextensions.mac.askpass"))
+        source = DispatchSource.makeReadSource(fileDescriptor: descriptor, queue: DispatchQueue(label: "io.github.norgera.gitextensionsmac.askpass"))
         source.setEventHandler { [weak self] in self?.readRequests() }
         source.setCancelHandler { Darwin.close(descriptor) }
         source.resume()

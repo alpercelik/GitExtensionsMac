@@ -12,6 +12,12 @@
         FA9000000000000000000001 = {isa = PBXBuildFile; fileRef = FA9000000000000000000002; };
         FA9000000000000000000011 = {isa = PBXBuildFile; fileRef = FA9000000000000000000012; };
 		9FB0BA2A067D438F8107E75A /* Blame.png in Resources */ = {isa = PBXBuildFile; fileRef = E2DEBCD6E6144380BC9AB8D1 /* Blame.png */; };
+		D93777E4889AA0E61F3A5D70 /* PullFetchPruneAll.png in Resources */ = {isa = PBXBuildFile; fileRef = C0B37C868159E50982C80375 /* PullFetchPruneAll.png */; };
+		EAC8EE6712064092328639FF /* PullFetchAll.png in Resources */ = {isa = PBXBuildFile; fileRef = 1E6E35EC634D0B253E7AA271 /* PullFetchAll.png */; };
+		70C94470C408E093B08E19A6 /* PullFetch.png in Resources */ = {isa = PBXBuildFile; fileRef = 9E8DFE99C873C006EE7C3F47 /* PullFetch.png */; };
+		B9C700FFF963330B78C2A370 /* PullRebase.png in Resources */ = {isa = PBXBuildFile; fileRef = 34661C16766BB4325F97842E /* PullRebase.png */; };
+		B326E55F3C50AD7F828C27E5 /* PullMerge.png in Resources */ = {isa = PBXBuildFile; fileRef = DA4B3F330BF0B1C220A0AC9D /* PullMerge.png */; };
+		CB20D395D92E6297EAAFEC5E /* Information.png in Resources */ = {isa = PBXBuildFile; fileRef = 41BF1D61E015BB2C8F1D9D52 /* Information.png */; };
 		2980200652DD44F59643249D /* FileHistory.png in Resources */ = {isa = PBXBuildFile; fileRef = 263D283C6D704060823A6C57 /* FileHistory.png */; };
 		1805162624EE4A4E832B5AB9 /* Stage.png in Resources */ = {isa = PBXBuildFile; fileRef = 521985DAC8B0436CA7CCF906 /* Stage.png */; };
 		FA9000000000000000000041 /* SolveMerge.png in Resources */ = {isa = PBXBuildFile; fileRef = FA9000000000000000000042 /* SolveMerge.png */; };
@@ -497,6 +503,12 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
         FA9000000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationScriptPrompts.swift; sourceTree = "<group>"; };
         FA9000000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitterManager.swift; sourceTree = "<group>"; };
 		E2DEBCD6E6144380BC9AB8D1 /* Blame.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Blame.png; sourceTree = "<group>"; };
+		C0B37C868159E50982C80375 /* PullFetchPruneAll.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PullFetchPruneAll.png; sourceTree = "<group>"; };
+		1E6E35EC634D0B253E7AA271 /* PullFetchAll.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PullFetchAll.png; sourceTree = "<group>"; };
+		9E8DFE99C873C006EE7C3F47 /* PullFetch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PullFetch.png; sourceTree = "<group>"; };
+		34661C16766BB4325F97842E /* PullRebase.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PullRebase.png; sourceTree = "<group>"; };
+		DA4B3F330BF0B1C220A0AC9D /* PullMerge.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PullMerge.png; sourceTree = "<group>"; };
+		41BF1D61E015BB2C8F1D9D52 /* Information.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Information.png; sourceTree = "<group>"; };
 		263D283C6D704060823A6C57 /* FileHistory.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = FileHistory.png; sourceTree = "<group>"; };
 		521985DAC8B0436CA7CCF906 /* Stage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Stage.png; sourceTree = "<group>"; };
 		FA9000000000000000000042 /* SolveMerge.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SolveMerge.png; sourceTree = "<group>"; };
@@ -1247,6 +1259,12 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				FA9000000000000000000062 /* SubmodulesSync.png */,
 				263D283C6D704060823A6C57 /* FileHistory.png */,
 				E2DEBCD6E6144380BC9AB8D1 /* Blame.png */,
+				C0B37C868159E50982C80375 /* PullFetchPruneAll.png */,
+				1E6E35EC634D0B253E7AA271 /* PullFetchAll.png */,
+				9E8DFE99C873C006EE7C3F47 /* PullFetch.png */,
+				34661C16766BB4325F97842E /* PullRebase.png */,
+				DA4B3F330BF0B1C220A0AC9D /* PullMerge.png */,
+				41BF1D61E015BB2C8F1D9D52 /* Information.png */,
 				A5188E3B4AD7450B8DA2FE21 /* BranchCheckout.png */,
 				FD8ED10C676DAFA3C2FAB793 /* SelectBranch.png */,
 				0E9623CCACF1AC51FB4DDAE9 /* GotoManual.png */,
@@ -1732,6 +1750,12 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				FA9000000000000000000061 /* SubmodulesSync.png in Resources */,
 				2980200652DD44F59643249D /* FileHistory.png in Resources */,
 				9FB0BA2A067D438F8107E75A /* Blame.png in Resources */,
+				D93777E4889AA0E61F3A5D70 /* PullFetchPruneAll.png in Resources */,
+				EAC8EE6712064092328639FF /* PullFetchAll.png in Resources */,
+				70C94470C408E093B08E19A6 /* PullFetch.png in Resources */,
+				B9C700FFF963330B78C2A370 /* PullRebase.png in Resources */,
+				B326E55F3C50AD7F828C27E5 /* PullMerge.png in Resources */,
+				CB20D395D92E6297EAAFEC5E /* Information.png in Resources */,
 				AAF927CD473648F6A13A8002 /* BranchCheckout.png in Resources */,
 				72530BE50805412391086F7A /* SelectBranch.png in Resources */,
 				81C880B161B991C2CD9D20CF /* GotoManual.png in Resources */,
@@ -2175,7 +2199,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 		C0501E000000000000000007 /* SwiftTerm */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm.git";
-			requirement = {kind = exactVersion; version = 1.18.0; };
+			requirement = {kind = exactVersion; version = 1.99.1; };
 		};
 /* End XCRemoteSwiftPackageReference section */
 /* Begin XCSwiftPackageProductDependency section */
@@ -2204,7 +2228,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.gitui;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.gitui;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -2226,7 +2250,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac -driver-batch-count 2";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -2245,7 +2269,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac -driver-batch-count 2";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
@@ -2331,7 +2355,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.gitextensionscore;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.gitextensionscore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -2345,17 +2369,16 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Git Extensions";
+				INFOPLIST_KEY_CFBundleDisplayName = GitExtensionsMac;
                 INFOPLIST_KEY_NSPrincipalClass = GitExtensionsApplication;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2380,7 +2403,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.gitcommands;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.gitcommands;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -2407,7 +2430,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.gitui;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.gitui;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -2434,7 +2457,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.gitextensionscore;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.gitextensionscore;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -2503,17 +2526,16 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Git Extensions";
+				INFOPLIST_KEY_CFBundleDisplayName = GitExtensionsMac;
                 INFOPLIST_KEY_NSPrincipalClass = GitExtensionsApplication;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2538,7 +2560,7 @@ F80000000000000000000001 /* GitWorktrees.swift in Sources */ = {isa = PBXBuildFi
 				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) -package-name GitExtensionsMac";
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitextensions.mac.gitcommands;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.norgera.gitextensionsmac.gitcommands;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;

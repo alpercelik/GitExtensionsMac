@@ -2,8 +2,6 @@ import AppKit
 import GitCommands
 import GitExtensionsCore
 
-
-
 @MainActor
 final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate {
     struct References { var local: [String] = []; var remote: [String] = []; var tags: [String] = [] }
@@ -122,8 +120,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
         button.setContentCompressionResistancePriority(.required, for: .horizontal)
     }
 
-
-
     var customizableItems: [(key: String, title: String, views: [NSView])] {
         [
             ("tsddbtnAdvancedFilter", "Advanced filter", [advancedButton, advancedArrow]),
@@ -151,8 +147,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
         [[advancedButton, advancedArrow], [reflogButton], [branchesMode], [branchesLabel, branchCombo, branchType],
          [groupSeparator, filterLabel, revisionCombo, filterType], [firstParentButton]]
     }
-
-
 
     @objc private func advancedClicked() {
         guard let grid else { return }
@@ -206,7 +200,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
 
     private func checked(_ title: String) -> Bool { filterType.item(withTitle: title)?.state == .on }
 
-
     func applyRevisionFilter() {
         guard !applying else { return }
         applying = true; defer { applying = false }
@@ -214,7 +207,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
                                               message: checked("Commit message"), committer: checked("Committer"),
                                               author: checked("Author"), diffContent: checked("Diff contains (SLOW)")))
     }
-
 
     func applyCustomBranchFilter(checkBranch: Bool) {
         guard !applying else { return }
@@ -241,7 +233,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
         }
     }
 
-
     func branchSuggestions(for text: String) -> [String] {
         let refs = references()
         let local = branchType.item(withTitle: "Local")?.state == .on
@@ -263,7 +254,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
         branchCombo.addItems(withObjectValues: branchSuggestions(for: branchCombo.stringValue))
     }
 
-
     func setBranchFilter(_ filter: String) {
         branchCombo.stringValue = filter
         applyCustomBranchFilter(checkBranch: false)
@@ -279,7 +269,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
         revisionCombo.removeAllItems()
         revisionCombo.addItems(withObjectValues: history + Self.builtInRevisionFilters.filter { !history.contains($0) })
     }
-
 
     func filterChanged(_ filter: RevisionGridFilter) {
         firstParentButton.state = filter.showOnlyFirstParent ? .on : .off
@@ -318,7 +307,6 @@ final class RevisionFilterToolbar: NSObject, NSComboBoxDelegate, NSMenuDelegate 
         advancedButton.image = AppKitFactory.resourceImage(filter.hasFilter ? "FunnelExclamation" : "FunnelPencil", accessibilityDescription: "Advanced filter")
     }
 }
-
 
 @MainActor
 final class RevisionFilterDialogController: NSViewController {
@@ -410,7 +398,6 @@ final class RevisionFilterDialogController: NSViewController {
         load()
     }
 
-
     private func load() {
         sinceCheck.state = filter.byDateFrom ? .on : .off
         since.dateValue = filter.dateFrom ?? Calendar.current.startOfDay(for: Date())
@@ -486,7 +473,6 @@ final class RevisionFilterDialogController: NSViewController {
     }
 }
 
-
 @MainActor
 final class GoToCommitDialog: NSViewController, NSTextFieldDelegate, NSComboBoxDelegate {
     private let expression = NSTextField(string: "")
@@ -549,7 +535,6 @@ final class GoToCommitDialog: NSViewController, NSTextFieldDelegate, NSComboBoxD
         view = root
     }
     override func viewDidAppear() { super.viewDidAppear(); view.window?.makeFirstResponder(expression); expression.selectText(nil) }
-
 
     func controlTextDidChange(_ notification: Notification) { take(notification.object as? NSControl) }
     func comboBoxSelectionDidChange(_ notification: Notification) {

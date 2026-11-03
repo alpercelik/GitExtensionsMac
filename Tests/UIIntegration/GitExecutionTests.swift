@@ -27,6 +27,34 @@ extension UIIntegrationTests {
             try await sshAskPassHelper()
             try processDialogPreferences()
             try await processInputController()
+            try await unusableGitIsNotReportedAsInvalidRepository()
+        }
+
+        private static func unusableGitIsNotReportedAsInvalidRepository() async throws {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("UnusableGit-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let stub = directory.appendingPathComponent("git")
+            try "#!/bin/sh\necho 'xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools)' >&2\nexit 1\n".write(to: stub, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: stub.path)
+            let folder = directory.appendingPathComponent("folder", isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+            var message = ""
+            do { _ = try await GitRepositoryModule(repositoryURL: folder, git: GitProcess(executableURL: stub)).openRepository(at: folder) }
+            catch { message = error.localizedDescription }
+            #expect(message.hasPrefix("Git could not be launched:") && message.contains("invalid active developer path"), "a Git that cannot run reports its own error: \(message)")
+
+            message = ""
+            let missing = directory.appendingPathComponent("missing-git")
+            do { _ = try await GitRepositoryModule(repositoryURL: folder, git: GitProcess(executableURL: missing)).openRepository(at: folder) }
+            catch { message = error.localizedDescription }
+            #expect(message == "Git executable is unavailable at \(missing.path).", "a missing Git executable is reported as such: \(message)")
+
+            message = ""
+            do { _ = try await GitRepositoryModule(repositoryURL: folder, git: GitProcess()).openRepository(at: folder) }
+            catch { message = error.localizedDescription }
+            #expect(message == "The selected directory is not a Git repository: \(folder.path)", "a working Git still reports a plain folder as not a repository: \(message)")
         }
 
         private struct Failure: LocalizedError { let errorDescription: String? }

@@ -161,13 +161,13 @@ final class TeamCityBuildChooserController: NSViewController, NSOutlineViewDataS
                     if let parent = project.parent.flatMap({ nodes[$0] }) { parent.children.append(node) } else { roots.append(node) }
                 }
                 for node in nodes.values { node.children.sort { $0.title < $1.title } }
-                tree.reloadData(); roots.forEach { tree.expandItem($0) }; status.stringValue = ""
+                tree.reloadData(); roots.forEach { self.tree.expandItem($0) }; status.stringValue = ""
                 if let selected = nodes[selectedProject] {
                     var parent = selected.project?.parent
                     while let id = parent, let node = nodes[id] { tree.expandItem(node); parent = node.project?.parent }
                     await loadBuilds(selected)
                     tree.expandItem(selected)
-                    let target = selected.children.first { $0.build?.id == selectedBuild } ?? selected
+                    let target = selected.children.first { $0.build?.id == self.selectedBuild } ?? selected
                     let row = tree.row(forItem: target)
                     if row >= 0 { tree.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false) }
                 }

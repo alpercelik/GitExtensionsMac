@@ -153,7 +153,7 @@ private final class CreateWorktreeViewController: NSViewController, NSTextFieldD
         guard create.isEnabled else { return }
         let request = RepositoryCreateWorktreeRequest(path: path.stringValue, branch: branch, createBranch: new.state == .on)
         busy = true; validate(); output.stringValue = "Creating worktree…"
-        operation = Task { @MainActor in
+        operation = Task { @MainActor [self] in
             do {
                 let result = try await execute(request) { [weak self] event in
                     Task { @MainActor in

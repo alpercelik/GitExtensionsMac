@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 @MainActor
 final class RepositoryCurrentBranchNameCache {
     static let shared = RepositoryCurrentBranchNameCache()
@@ -11,7 +10,6 @@ final class RepositoryCurrentBranchNameCache {
     var isEmpty: Bool { names.isEmpty }
 
     func cachedBranchName(_ path: String) -> String? { names[path] }
-
 
     func updatedBranchName(_ path: String) async -> String {
         guard AppSettingsStore.shared.recentRepositorySettings.showCurrentBranch else {
@@ -26,7 +24,6 @@ final class RepositoryCurrentBranchNameCache {
 
     func invalidateAll() { names.removeAll() }
 }
-
 
 @MainActor
 final class RepositoryHistoryUIService: ObservableObject {
@@ -45,7 +42,6 @@ final class RepositoryHistoryUIService: ObservableObject {
         let id: String
         let items: [MenuItem]
     }
-
 
     @Published private(set) var pinned: [MenuItem] = []
     @Published private(set) var recent: [MenuItem] = []
@@ -69,7 +65,6 @@ final class RepositoryHistoryUIService: ObservableObject {
     static func menuMeasure(_ text: String) -> CGFloat {
         (text as NSString).size(withAttributes: [.font: NSFont.menuFont(ofSize: 0)]).width
     }
-
 
     static func menuItem(_ info: RecentRepoInfo, number: Int, group: String, anchored: Bool) -> MenuItem {
         let caption = info.caption ?? info.repo.path
@@ -108,7 +103,6 @@ final class RepositoryHistoryUIService: ObservableObject {
         if self.favourites != favourites { self.favourites = favourites }
     }
 
-
     func triggerBranchNameCacheUpdate() {
         branchCacheTask?.cancel()
         let store = AppSettingsStore.shared
@@ -123,7 +117,6 @@ final class RepositoryHistoryUIService: ObservableObject {
             self?.reload()
         }
     }
-
 
     func open(_ path: String, owner: NSWindow?) {
         let modifiers = NSEvent.modifierFlags
@@ -141,7 +134,6 @@ final class RepositoryHistoryUIService: ObservableObject {
         InvalidRepositoryRemover.showDeleteInvalidRepositoryDialog(path, owner: owner) { _ in }
     }
 }
-
 
 @MainActor
 enum InvalidRepositoryRemover {

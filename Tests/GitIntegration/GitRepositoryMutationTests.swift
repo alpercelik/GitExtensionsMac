@@ -575,15 +575,15 @@ extension GitIntegrationTests {
             try helper.configureIdentity(in: repository)
             let originalHead = try helper.git(["rev-parse", "HEAD"], in: repository).trimmed
             let suffix = String(UUID().uuidString.prefix(8)).lowercased()
-            let dailyBranch = "codex-phase3-daily-\(suffix)"
-            let cherryBranch = "codex-phase3-cherry-\(suffix)"
-            let targetBranch = "codex-phase3-target-\(suffix)"
-            let rebaseBranch = "codex-phase3-rebase-\(suffix)"
-            let markerPath = "codex-phase3-\(suffix).txt"
-            let cherryPath = "codex-phase3-cherry-\(suffix).txt"
-            let targetPath = "codex-phase3-target-\(suffix).txt"
-            let rebaseAPath = "codex-phase3-rebase-a-\(suffix).txt"
-            let rebaseBPath = "codex-phase3-rebase-b-\(suffix).txt"
+            let dailyBranch = "disposable-clone-daily-\(suffix)"
+            let cherryBranch = "disposable-clone-cherry-\(suffix)"
+            let targetBranch = "disposable-clone-target-\(suffix)"
+            let rebaseBranch = "disposable-clone-rebase-\(suffix)"
+            let markerPath = "disposable-clone-\(suffix).txt"
+            let cherryPath = "disposable-clone-cherry-\(suffix).txt"
+            let targetPath = "disposable-clone-target-\(suffix).txt"
+            let rebaseAPath = "disposable-clone-rebase-a-\(suffix).txt"
+            let rebaseBPath = "disposable-clone-rebase-b-\(suffix).txt"
 
             try helper.git(["branch", dailyBranch, originalHead], in: repository)
             let source = GitRepositoryModule(repositoryURL: repository)
@@ -1491,7 +1491,7 @@ extension GitIntegrationTests {
                     stageAllBeforeCommit: false,
                     allowEmpty: false,
                     signOff: true,
-                    author: "Phase Three <phase3@example.com>",
+                    author: "Override Author <override@example.com>",
                     resetAuthor: false
                 ))
 
@@ -1512,7 +1512,7 @@ extension GitIntegrationTests {
                 body.contains("Body text") && body.contains("Signed-off-by: Mutation Fixture <mutation@example.com>"),
                 "commit: body and committer signoff are preserved")
             try #require(
-                try fixture.git(["log", "-1", "--format=%an <%ae>"], in: repository).trimmed == "Phase Three <phase3@example.com>",
+                try fixture.git(["log", "-1", "--format=%an <%ae>"], in: repository).trimmed == "Override Author <override@example.com>",
                 "commit: author override is applied")
             let state = try await source.loadMutationState()
             try #require(

@@ -267,7 +267,6 @@ struct StashPreferences: Codable, Equatable, Sendable {
     var dividerPosition = 280.0
 }
 
-
 struct RevisionGridPreferences: Codable, Equatable, Sendable {
     var showGraphColumn = true
     var showNotesColumn = false
@@ -346,8 +345,6 @@ struct RevisionGridPreferences: Codable, Equatable, Sendable {
     }
 }
 
-
-
 extension RevisionSortOrder {
     var settingsTitle: String {
         switch self {
@@ -365,14 +362,12 @@ struct RevisionGridRuntimeSettings: Codable, Equatable, Sendable {
     var showReflogReferences = false
 }
 
-
 struct CommitInfoPreferences: Codable, Equatable, Sendable {
     var showContainedInBranchesLocal = true
     var showContainedInBranchesRemote = false
     var showContainedInBranchesRemoteIfNoLocal = false
     var showContainedInTags = true
     var showTagThisCommitDerivesFrom = true
-
 
     var showContainedInBranches: Bool {
         showContainedInBranchesLocal || showContainedInBranchesRemote || showContainedInBranchesRemoteIfNoLocal
@@ -495,8 +490,6 @@ struct RepositoryTreePreferences: Codable, Equatable, Sendable {
     }
 }
 
-
-
 struct BrowserLayoutPreferences: Codable, Equatable, Sendable {
     enum CommitInfoPosition: Int, Codable, Sendable, CaseIterable {
         case belowList, leftwardFromList, rightwardFromList
@@ -521,7 +514,6 @@ struct BrowserLayoutPreferences: Codable, Equatable, Sendable {
         toolbarItemVisibility = try values.decodeIfPresent([String: Bool].self, forKey: .toolbarItemVisibility) ?? [:]
         splitters = try values.decodeIfPresent([String: Splitter].self, forKey: .splitters) ?? [:]
     }
-
 
     static func restoredDistance(_ saved: Splitter?, size: Double, fixed: RetainingSplitViewController.ResizeBehavior) -> Double? {
         guard let saved, saved.size > 0, saved.distance > 0, size > 0 else { return nil }
@@ -663,7 +655,6 @@ enum FileStatusGrouping: String, Codable, CaseIterable, Sendable {
     case fileExtension
     case status
 }
-
 
 struct BlamePreferences: Codable, Equatable, Sendable {
     var ignoreWhitespace = true
@@ -977,7 +968,6 @@ enum CommitMessageAutoFormatter {
     }
 }
 
-
 private struct LegacyRecentRepository: Codable {
     let path: String
 }
@@ -1028,8 +1018,6 @@ final class AppSettingsStore {
 
     private let defaults: UserDefaults
 
-
-
     var unsetDetailedSettingKeys: Set<String> {
         get { Set(defaults.stringArray(forKey: Key.unsetDetailedSettings) ?? []) }
         set { defaults.set(newValue.sorted(), forKey: Key.unsetDetailedSettings) }
@@ -1055,7 +1043,6 @@ final class AppSettingsStore {
         if value == nil { unset.insert(key) } else { unset.remove(key) }
         unsetDetailedSettingKeys = unset
     }
-
 
     var checkSettingsAtStartup: Bool {
         get { defaults.object(forKey: "GitExtensionsMac.checkSettingsAtStartup") as? Bool ?? true }
@@ -1294,7 +1281,6 @@ final class AppSettingsStore {
         showBuildStatusTextColumn = defaults.object(forKey: Key.showBuildStatusTextColumn) as? Bool ?? false
         if defaults.object(forKey: Key.unsetDetailedSettings) == nil {
             var unset: Set<String> = []
-
 
             if defaults.data(forKey: Key.pushPreferences) == nil { unset.insert(DistributedSettings.remoteBranches) }
             if defaults.data(forKey: Key.mergePreferences) == nil {
@@ -1644,7 +1630,6 @@ final class AppSettingsStore {
         defaults.set(text, forKey: Key.showBuildStatusTextColumn)
     }
 
-
     func saveShowReflogReferences(_ show: Bool) {
         revisionGridRuntime.showReflogReferences = show
     }
@@ -1677,8 +1662,6 @@ final class AppSettingsStore {
         defaults.set(try? JSONEncoder().encode(preferences), forKey: Key.revisionGridPreferences)
     }
 
-
-
     func saveRevisionSortOrder(_ order: RevisionSortOrder) {
         revisionGridRuntime.sortOrder = order
         revisionGridRuntimeDefaults.sortOrder = order
@@ -1700,9 +1683,6 @@ final class AppSettingsStore {
         defaults.set(RepositoryHistory.normalizedPath(url.path), forKey: Key.lastRepository)
     }
 
-
-
-
     var recentRepositorySettings: RecentRepositorySettings {
         if let data = defaults.data(forKey: Key.recentRepositorySettings),
            let settings = try? JSONDecoder().decode(RecentRepositorySettings.self, from: data) { return settings }
@@ -1719,7 +1699,6 @@ final class AppSettingsStore {
         NotificationCenter.default.post(name: .recentRepositoriesDidChange, object: self)
     }
 
-
     var recentRepositories: [RepositoryHistoryEntry] {
         let stored: [RepositoryHistoryEntry]
         if let data = defaults.data(forKey: Key.recentHistory) {
@@ -1732,12 +1711,10 @@ final class AppSettingsStore {
         return RepositoryHistory.adjustHistorySize(stored, size: recentRepositorySettings.historySize)
     }
 
-
     var favouriteRepositories: [RepositoryHistoryEntry] {
         defaults.data(forKey: Key.favouriteHistory)
             .flatMap { try? JSONDecoder().decode([RepositoryHistoryEntry].self, from: $0) } ?? []
     }
-
 
     func saveRecentHistory(_ history: [RepositoryHistoryEntry]) {
         let adjusted = RepositoryHistory.adjustHistorySize(history, size: recentRepositorySettings.historySize)
@@ -1750,7 +1727,6 @@ final class AppSettingsStore {
         NotificationCenter.default.post(name: .recentRepositoriesDidChange, object: self)
     }
 
-
     func recordRecentRepository(_ url: URL) {
 
         let path = RepositoryHistory.normalizedPath(url.path)
@@ -1760,13 +1736,11 @@ final class AppSettingsStore {
         saveRecentHistory(updated)
     }
 
-
     func removeRecentRepository(path: String) {
         let history = recentRepositories
         let updated = RepositoryHistory.remove(path, from: history)
         if updated != history { saveRecentHistory(updated) }
     }
-
 
     func removeFavouriteRepository(path: String) {
         let history = favouriteRepositories
@@ -1774,11 +1748,9 @@ final class AppSettingsStore {
         if updated != history { saveFavouriteHistory(updated) }
     }
 
-
     func assignCategory(_ repository: RepositoryHistoryEntry, category: String?) {
         saveFavouriteHistory(RepositoryHistory.assignCategory(repository, category: category, favourites: favouriteRepositories))
     }
-
 
     func removeInvalidRepositories(isValid: (String) -> Bool = { RepositoryHistory.isValidGitWorkingDir($0) }) {
         let recent = recentRepositories
@@ -1788,7 +1760,6 @@ final class AppSettingsStore {
         let validFavourites = RepositoryHistory.removeInvalid(favourites, isValid: isValid)
         if validFavourites.count != favourites.count { saveFavouriteHistory(validFavourites) }
     }
-
 
     func clearRecentRepositories() {
         saveRecentHistory([])

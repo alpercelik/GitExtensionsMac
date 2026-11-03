@@ -2,8 +2,6 @@ import AppKit
 import GitCommands
 import GitExtensionsCore
 
-
-
 @MainActor
 final class CommitDiffWindowController: NSWindowController, NSWindowDelegate {
     let diffController = RevisionDiffViewController(mode: .diff, groupsByRevision: false)
@@ -72,7 +70,6 @@ class RevisionComparisonWindowController: NSWindowController, NSWindowDelegate {
 private final class RevisionComparisonWindow: NSWindow {
     override func cancelOperation(_ sender: Any?) { performClose(sender) }
 }
-
 
 @MainActor
 final class RevisionPairViewController: NSViewController {
@@ -178,7 +175,6 @@ final class RevisionPairViewController: NSViewController {
     @objc private func pickBranch(_ sender: NSButton) { onPickBranch?(sender.tag == 0) }
     @objc private func pickCommit(_ sender: NSButton) { onPickCommit?(sender.tag == 0) }
 }
-
 
 @MainActor
 final class RevisionComparisonGridController: NSViewController {
@@ -336,7 +332,6 @@ final class RevisionComparisonGridController: NSViewController {
         if !grid.setSelectedRevision(parentIDs[sender.tag]) { RevisionGridMessages.revisionFilteredInGrid(parentIDs[sender.tag]) }
     }
 }
-
 
 @MainActor
 final class ComparisonBranchPicker: NSViewController, NSComboBoxDelegate {

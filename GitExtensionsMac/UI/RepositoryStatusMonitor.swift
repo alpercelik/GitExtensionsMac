@@ -77,6 +77,9 @@ final class RepositoryStatusMonitor {
     private(set) var state = RepositoryRefreshState()
     private(set) var repositoryID: String?
     private var paths: [String] = []
+    private var revisionIndexPath: String?
+    private var revisionRefsPath: String?
+    private(set) var revisionsChanged = false
     private var requiresStreamRestart = false
     private var stream: RepositoryEventStream?
     private var scheduled: Task<Void, Never>?
@@ -97,9 +100,15 @@ final class RepositoryStatusMonitor {
     init(timing: Timing = Timing()) { self.timing = timing }
     deinit { scheduled?.cancel(); polling?.cancel() }
 
-    func configure(repositoryID: String, urls: [URL]) {
+    func configure(repositoryID: String, urls: [URL], revisionURLs: [URL] = []) {
         if let previous = self.repositoryID, previous != repositoryID { stop() }
         self.repositoryID = repositoryID
+        let revisionPaths = revisionURLs.map { url in
+            let path = url.standardizedFileURL.path
+            return realpath(path, nil).map { resolved in defer { free(resolved) }; return String(cString: resolved) } ?? path
+        }
+        revisionIndexPath = revisionPaths.first
+        revisionRefsPath = revisionPaths.dropFirst().first
         let paths = Array(Set(urls.map { $0.standardizedFileURL.resolvingSymlinksInPath().path })).sorted()
         guard paths != self.paths || stream == nil || requiresStreamRestart else { return }
         self.paths = paths
@@ -121,12 +130,23 @@ final class RepositoryStatusMonitor {
         polling?.cancel(); polling = nil
         requiresStreamRestart = false
         stream = nil; paths = []; repositoryID = nil; due = nil
+        revisionIndexPath = nil; revisionRefsPath = nil; revisionsChanged = false
         earliest = .now; errors = 0; stoppedAfterErrors = false
         pendingInteractive = false
         state.reset(); onStateChanged?()
     }
 
+    func revisionsRefreshed() {
+        guard revisionsChanged else { return }
+        revisionsChanged = false
+        onStateChanged?()
+    }
+
     func receive(path: String, flags: FSEventStreamEventFlags) {
+        if !revisionsChanged, path == revisionIndexPath || revisionRefsPath.map({ path == $0 || path.hasPrefix($0 + "/") }) == true {
+            revisionsChanged = true
+            onStateChanged?()
+        }
         if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagRootChanged) != 0 { requiresStreamRestart = true }
         if flags & FSEventStreamEventFlags(kFSEventStreamEventFlagRootChanged | kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagUserDropped | kFSEventStreamEventFlagKernelDropped) != 0 {
             changed(); return

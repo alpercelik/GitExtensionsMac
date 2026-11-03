@@ -916,7 +916,6 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
 
     override func loadView() {
 
-
         let requestedPage = initialPage ?? Self.lastSelectedPage ?? "application"
         let root = NSView()
         let column = NSTableColumn(identifier: .init("Category"))
@@ -1596,7 +1595,6 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
         SettingsFormRow.layOut(in: content)
     }
 
-
     private static let searchKeywords: [String: String] = [
         "application": "Checklist Git version username email editor merge tool diff tool repair save rescan check settings startup",
         "general": "Performance show number changed files artificial commits submodules status stash count ahead behind uncommitted checkout Behaviour close process dialog succeeds histogram diff algorithm untracked autostash open last working directory startup revision grid quick search timeout milliseconds maximum revisions unlimited default clone destination Pull button action update submodules checkout",
@@ -1694,11 +1692,26 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
         case .git:
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                if let executable = await GitSettingsChecklist.locateGit() {
+                let executable = await GitSettingsChecklist.locateGit()
+                let alert = NSAlert()
+                alert.messageText = "Locate git"
+                alert.addButton(withTitle: "OK")
+                if let executable {
+                    alert.informativeText = "Git can be run using: \(executable.path)"
+                } else {
+                    alert.alertStyle = .critical
+                    alert.informativeText = "The command to run git could not be determined automatically.\nPlease make sure that Git is installed (run xcode-select --install to install the Command Line Developer Tools, or install Git with Homebrew) or set the correct command manually."
+                }
+                if let window = panel ?? view.window {
+                    await withCheckedContinuation { continuation in
+                        alert.beginSheetModal(for: window) { _ in continuation.resume() }
+                    }
+                }
+                goToCategory("git_paths")
+                if let executable {
                     draft.gitExecutablePath = executable.path
                     saveSettings(closeAfter: false)
                 }
-                goToCategory("git_paths")
             }
         case .identity, .editor:
             configPageScopes["git_config"] = .global

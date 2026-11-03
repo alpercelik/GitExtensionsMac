@@ -325,7 +325,6 @@ package enum ScriptExecution {
         return ScriptInvocation(executable: try executable(command, directory: directory, environment: environment), arguments: args, workingDirectory: directory, environment: environment)
     }
 
-
     package static func terminalInvocation(executable: URL, arguments: [String], directory: URL,
                                            environment: [String: String] = [:]) throws -> ScriptInvocation {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("GitExtensions-Script-\(UUID()).command")
@@ -372,7 +371,6 @@ package enum ScriptExecution {
 
     package static func run(_ invocation: ScriptInvocation, output: @escaping GitOutputHandler) async throws -> GitCommandResult {
         let process = GitProcess(executableURL: invocation.executable)
-
 
         guard ProcessOutputHistory.recordsOutput else {
             return try await process.runStreaming(arguments: invocation.arguments, in: invocation.workingDirectory,

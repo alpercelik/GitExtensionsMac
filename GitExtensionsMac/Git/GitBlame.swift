@@ -61,7 +61,6 @@ package struct BlameLine: Sendable {
     }
 }
 
-
 package struct BlameResult: Sendable {
     package let lines: [BlameLine]
     package let contentEncoding: String.Encoding
@@ -70,7 +69,6 @@ package struct BlameResult: Sendable {
         self.contentEncoding = contentEncoding
     }
 }
-
 
 package struct BlameOptions: Equatable, Sendable {
     package var ignoreWhitespace = true
@@ -107,7 +105,6 @@ package enum BlameCommands {
         return GitCommand(arguments: arguments, accessesRemote: false, changesRepositoryState: false)
     }
 
-
     package static func previousRevisionDiff(parent: ObjectID, commit: ObjectID, file: String, options: BlameOptions) -> GitCommand {
         var arguments = ["diff", "--no-ext-diff", "-U0", "--diff-algorithm=\(options.histogramDiffAlgorithm ? "histogram" : "default")"]
         if options.detectCopyInFile { arguments.append("--find-renames") }
@@ -116,7 +113,6 @@ package enum BlameCommands {
         arguments += [parent.string, commit.string, "--", file]
         return GitCommand(arguments: arguments, accessesRemote: false, changesRepositoryState: false)
     }
-
 
     package static func parse(_ output: Data, encoding: RepositoryTextEncoding) -> BlameResult {
         var commits: [ObjectID: BlameCommit] = [:]
@@ -185,7 +181,6 @@ package enum BlameCommands {
         return BlameResult(lines: lines, contentEncoding: contentEncoding)
     }
 
-
     package static func originalLine(inDiff diff: String, selectedLine: Int) -> Int {
         for chunk in diff.components(separatedBy: "\n@@").dropFirst().reversed() {
             let header = "@@" + (chunk.components(separatedBy: "\n").first ?? "")
@@ -234,7 +229,6 @@ extension GitRepositoryModule: RepositoryBlameDataSource {
         if let revision { target = revision }
         else if let head = await resolveRevision("HEAD") { target = head }
         else { throw BlameError.failed("No committed revision is available to blame.") }
-
 
         return try await loadReflogRevision(target)
     }

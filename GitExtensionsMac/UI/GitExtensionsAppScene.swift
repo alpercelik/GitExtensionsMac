@@ -3,12 +3,10 @@ import SwiftUI
 import GitCommands
 import Darwin
 
-
 enum ApplicationShellLinks {
 
     static let documentationURL = URL(string: "https://git-extensions-documentation.readthedocs.org/en/main/")!
 }
-
 
 package final class GitExtensionsApplicationDelegate: NSObject, NSApplicationDelegate {
     override package init() {
@@ -88,7 +86,6 @@ private struct GitExtensionsMenuCommands: Commands {
     @ObservedObject private var hotkeys = ApplicationHotkeys.shared
     @ObservedObject private var history = RepositoryHistoryUIService.shared
 
-
     private func historyButton(_ item: RepositoryHistoryUIService.MenuItem) -> some View {
         Button {
             RepositoryHistoryUIService.shared.open(item.path, owner: NSApp.mainWindow)
@@ -103,8 +100,6 @@ private struct GitExtensionsMenuCommands: Commands {
     private func perform(_ command: BrowserCommand) {
         BrowserCommandCenter.perform(command)
     }
-
-
 
     @ViewBuilder
     private func revisionGridItems(_ commands: [RevisionGridMenuCommand]) -> some View {
@@ -159,7 +154,6 @@ private struct GitExtensionsMenuCommands: Commands {
                 .keyboardShortcut(hotkeys.shortcut("cloneRepository"))
         }
 
-
         CommandMenu("Dashboard") {
             Button("Refresh") { perform(.refreshDashboard) }
                 .keyboardShortcut(availability.isDashboard ? hotkeys.shortcut("refresh") : nil)
@@ -168,7 +162,6 @@ private struct GitExtensionsMenuCommands: Commands {
             Button("Recent repositories settings") { perform(.recentRepositoriesSettings) }
                 .disabled(!availability.isDashboard)
         }
-
 
         CommandMenu("Repository") {
             let repository = availability.hasRepository
@@ -196,7 +189,6 @@ private struct GitExtensionsMenuCommands: Commands {
                 .disabled(!repository || !availability.canManageWorktrees)
             Divider()
 
-
             Button("Edit .gitignore") { perform(.editGitIgnore) }
                 .disabled(!repository || bare)
             Button("Edit .git/info/exclude") { perform(.editGitInfoExclude) }
@@ -222,7 +214,6 @@ private struct GitExtensionsMenuCommands: Commands {
                 .keyboardShortcut(hotkeys.shortcut("closeToDashboard"))
                 .disabled(!repository)
         }
-
 
         CommandGroup(after: .sidebar) {
             Button("Output history") { perform(.outputHistory) }
@@ -250,7 +241,6 @@ private struct GitExtensionsMenuCommands: Commands {
         CommandMenu("Navigate") {
             revisionGridItems(RevisionGridMenuModel.navigate(availability.gridMenuState ?? .init()))
         }
-
 
         CommandMenu("Commands") {
             let repository = availability.hasRepository
@@ -351,7 +341,6 @@ private struct GitExtensionsMenuCommands: Commands {
             Button("Installed plugins…") { perform(.plugins) }
         }
 
-
         CommandMenu("Tools") {
             Button("Git bash") { perform(.openTerminal) }
                 .keyboardShortcut(hotkeys.shortcut("gitBash"))
@@ -369,7 +358,6 @@ private struct GitExtensionsMenuCommands: Commands {
                 .keyboardShortcut(hotkeys.shortcut("settings"))
         }
 
-
         CommandGroup(replacing: .help) {
             Button("User manual") { NSWorkspace.shared.open(ApplicationShellLinks.documentationURL) }
             Divider()
@@ -380,7 +368,7 @@ private struct GitExtensionsMenuCommands: Commands {
         }
 
         CommandGroup(replacing: .appInfo) {
-            Button("About Git Extensions") { AboutWindowController.show() }
+            Button("About GitExtensionsMac") { AboutWindowController.show() }
         }
     }
 }

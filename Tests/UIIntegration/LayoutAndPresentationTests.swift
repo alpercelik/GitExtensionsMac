@@ -386,7 +386,8 @@ extension UIIntegrationTests {
             let content = ErrorReportContent(exception: snapshot, environment: "environment")
             let url = URLComponents(url: content.issueURL(description: "  Reproduce λ + &  ")!, resolvingAgainstBaseURL: false)!
             let values = Dictionary(uniqueKeysWithValues: url.queryItems!.map { ($0.name, $0.value!) })
-            #expect(values["title"] == "[NBug] message" && values["template"] == "bug_report.yml" && values["labels"] == "type: NBug")
+            #expect(url.host == "github.com" && url.path == "/norgera/GitExtensionsMac/issues/new", "reports go to the Mac port tracker: \(url)")
+            #expect(values["title"] == "[NBug] message" && values["template"] == "bug_report.yml" && values["labels"] == "bug")
             #expect(values["description"] == "```\n" + snapshot.details + "\n```\n\nReproduce λ + &\n")
             #expect(content.copyText(description: "") == "environment```\n" + snapshot.details + "\n```\n\n")
             #expect(content.issueURL(description: "a", base: "file:///tmp/report") == nil)
@@ -449,6 +450,73 @@ extension UIIntegrationTests {
             #expect(
                 detail.window?.title == "Property Details" && detail.property.stringValue == "Code" && detail.information.string == "1"
                     && !detail.information.isEditable)
+        }
+
+        @Test("Previous crash report") static func previousCrashReport() throws {
+            func report(bugType: String = "309", exceptionBacktrace: Bool = false) throws -> Data {
+                let header: [String: Any] = ["bug_type": bugType, "name": "GitExtensionsMac", "bundleID": "io.github.norgera.gitextensionsmac", "timestamp": "2026-10-21 19:33:40.00 -0400"]
+                let body: [String: Any] = [
+                    "exception": ["type": "EXC_CRASH", "signal": "SIGABRT"],
+                    "asi": ["libswiftCore.dylib": ["Fatal error: Index out of range"]],
+                    "faultingThread": 1,
+                    "lastExceptionBacktrace": exceptionBacktrace ? [["imageIndex": 2, "symbol": "objc_exception_throw"], ["imageIndex": 1, "symbol": "BrowserCommand.run", "symbolLocation": 12]]  as Any : NSNull(),
+                    "usedImages": [["name": "libsystem_kernel.dylib"], ["name": "GitExtensionsMac"], ["name": "libobjc.A.dylib"]],
+                    "threads": [
+                        ["frames": [["imageIndex": 0, "imageOffset": 16]]],
+                        ["triggered": true, "frames": [
+                            ["imageIndex": 0, "symbol": "__pthread_kill", "symbolLocation": 8],
+                            ["imageIndex": 1, "imageOffset": 4096],
+                        ]],
+                    ],
+                ]
+                return try JSONSerialization.data(withJSONObject: header) + Data([10]) + JSONSerialization.data(withJSONObject: body)
+            }
+            let snapshot = try #require(PreviousCrashReport.snapshot(from: try report(), path: "/reports/GitExtensionsMac-1.ips"))
+            #expect(snapshot.type == "EXC_CRASH (SIGABRT)" && snapshot.message == "Fatal error: Index out of range")
+            #expect(snapshot.stackTrace == "0  libsystem_kernel.dylib  __pthread_kill + 8\n1  GitExtensionsMac  0x1000")
+            #expect(snapshot.targetSite == "1  GitExtensionsMac  0x1000" && snapshot.source == "io.github.norgera.gitextensionsmac", "target site is the first application frame")
+            let thrown = try #require(PreviousCrashReport.snapshot(from: try report(exceptionBacktrace: true), path: ""))
+            #expect(thrown.stackTrace == "0  libobjc.A.dylib  objc_exception_throw\n1  GitExtensionsMac  BrowserCommand.run + 12", "uncaught exceptions use the throw-site backtrace")
+            #expect(thrown.targetSite == "1  GitExtensionsMac  BrowserCommand.run + 12")
+            #expect(snapshot.data == [.init(name: "Crash report", value: "/reports/GitExtensionsMac-1.ips"), .init(name: "Time", value: "2026-10-21 19:33:40.00 -0400")])
+            #expect(PreviousCrashReport.snapshot(from: try report(bugType: "288"), path: "")?.type == nil, "only crash reports are shown")
+            #expect(PreviousCrashReport.snapshot(from: Data("not a report".utf8), path: "")?.type == nil)
+
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CrashReports-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let suite = "PreviousCrashReport-\(UUID().uuidString)"
+            let defaults = try #require(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let start = Date(timeIntervalSince1970: 1_800_000_000)
+            func write(_ name: String, _ data: Data, at date: Date) throws {
+                let url = directory.appendingPathComponent(name)
+                try data.write(to: url)
+                try FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: url.path)
+            }
+            try write("GitExtensionsMac-old.ips", try report(), at: start.addingTimeInterval(-60))
+            func check(at offset: TimeInterval) -> ExceptionReportSnapshot? {
+                PreviousCrashReport.check(defaults: defaults, directory: directory, processName: "GitExtensionsMac", now: start.addingTimeInterval(offset))
+            }
+            #expect(check(at: 0)?.type == nil, "the first launch only records a baseline")
+            try write("GitExtensionsMac-new.ips", try report(), at: start.addingTimeInterval(30))
+            try write("OtherApp-new.ips", try report(), at: start.addingTimeInterval(40))
+            try write("GitExtensionsMac-new.diag", try report(), at: start.addingTimeInterval(40))
+            #expect(check(at: 60)?.data.first.map { URL(fileURLWithPath: $0.value).lastPathComponent } == "GitExtensionsMac-new.ips", "a newer crash of this application is reported")
+            #expect(check(at: 120)?.type == nil, "each crash is reported once")
+
+            let content = ErrorReportContent(exception: snapshot, environment: "environment")
+            let window = ErrorReportWindow(content: content, context: .init(isPreviousSession: true))
+            #expect(window.send.title == "Send" && !window.ignore.isHidden && window.ignore.isEnabled && window.window!.styleMask.contains(.closable))
+            var opened: URL?
+            window.confirmSend = { true }
+            window.openAction = { opened = $0; return true }
+            duringModal {
+                window.descriptionInput.string = "steps"
+                window.sendReport()
+            }
+            #expect(window.run(owner: nil) == .resume, "sending a previous crash keeps the application running")
+            #expect(opened != nil)
         }
 
         @Test("Scripts") static func scripts() async throws {

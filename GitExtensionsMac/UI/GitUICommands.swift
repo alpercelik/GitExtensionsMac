@@ -854,7 +854,6 @@ final class GitUICommands {
             })
     }
 
-
     static func launchBrowse(_ url: URL, selection: [RevisionID] = [], fileHistory: FileHistoryBrowseRequest? = nil, onError: @escaping @MainActor (Error) -> Void = { _ in }) {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
@@ -864,12 +863,10 @@ final class GitUICommands {
         }
     }
 
-
     static func runGitGui(workingDirectory: URL, owner: NSWindow?) {
         let git = GitProcess(executableURL: URL(fileURLWithPath: AppSettingsStore.shared.preferences.gitExecutablePath))
         runExternalTool("Git GUI", git: git, arguments: ["gui"], workingDirectory: workingDirectory, owner: owner)
     }
-
 
     static func runGitK(workingDirectory: URL, owner: NSWindow?) {
         let gitDirectory = URL(fileURLWithPath: AppSettingsStore.shared.preferences.gitExecutablePath).deletingLastPathComponent().path
@@ -923,9 +920,8 @@ final class GitUICommands {
         }
     }
 
-
-
-    static func checkStartupSettings(owner: NSWindow, store: AppSettingsStore = .shared) async {
+    static func checkStartupSettings(owner: NSWindow, store: AppSettingsStore? = nil) async {
+        let store = store ?? .shared
         guard store.checkSettingsAtStartup else { return }
         var executable = URL(fileURLWithPath: (store.preferences.gitExecutablePath as NSString).expandingTildeInPath)
         var checks = (try? await GitSettingsChecklist.load(executableURL: executable)) ?? []
@@ -1090,7 +1086,7 @@ final class GitUICommands {
 
     private func startSubmodulePull(path: String) {
         if let submodulePullWindowController { submodulePullWindowController.window?.makeKeyAndOrderFront(nil); return }
-        Task { @MainActor in
+        Task { @MainActor [self] in
             do {
                 let child = try await submoduleSource(path: path)
                 guard let pullSource = child as? any RepositoryPullingDataSource else { return }
@@ -1216,11 +1212,9 @@ final class GitUICommands {
         return browser?.onApplicationCommand?(.openRecentRepository(URL(fileURLWithPath: worktree.path))) ?? false
     }
 
-
-
     static let dontConfirmUndoLastCommitKey = "GitExtensionsMac.DontConfirmUndoLastCommit"
 
-    static func confirmUndoLastCommit(respond: (NSAlert) -> NSApplication.ModalResponse = { $0.runModal() }) -> Bool {
+    static func confirmUndoLastCommit(respond: @MainActor (NSAlert) -> NSApplication.ModalResponse = { $0.runModal() }) -> Bool {
         if UserDefaults.standard.bool(forKey: dontConfirmUndoLastCommitKey) { return true }
         let alert = NSAlert()
         alert.alertStyle = .warning
@@ -1232,7 +1226,6 @@ final class GitUICommands {
         if alert.suppressionButton?.state == .on { UserDefaults.standard.set(true, forKey: dontConfirmUndoLastCommitKey) }
         return response == .alertFirstButtonReturn
     }
-
 
     func startUndoLastCommit() {
         guard let browser, let owner = browser.view.window,
@@ -1248,12 +1241,10 @@ final class GitUICommands {
         }
     }
 
-
     func openFileExplorer() {
         guard let path = browser?.repositoryIdentity?.currentRepository.path else { return }
         NSWorkspace.shared.open(URL(fileURLWithPath: path, isDirectory: true))
     }
-
 
     func openTerminal(shellID: String? = nil) {
         guard let browser, let path = browser.repositoryIdentity?.currentRepository.path else { return }
@@ -1270,7 +1261,6 @@ final class GitUICommands {
         }
     }
 
-
     func deleteIndexLock() {
         guard let browser, let owner = browser.view.window,
               let source = repositoryModule as? any RepositoryBrowserMaintenanceDataSource else { return }
@@ -1279,7 +1269,6 @@ final class GitUICommands {
             catch { await MutationDialogs.showError(error, title: "Delete index.lock", window: owner) }
         }
     }
-
 
     func compressGitDatabase() {
         guard let browser, let owner = browser.view.window,
@@ -1296,9 +1285,6 @@ final class GitUICommands {
         }
     }
 
-
-
-
     func startEditGitIgnore(localExclude: Bool, owner: NSWindow? = nil, onClosed: (() -> Void)? = nil) {
         startRepositoryFileEditor(localExclude ? .localExclude : .gitIgnore, owner: owner) { [weak self] in
             self?.pluginEvent("PostEditGitIgnore", succeeded: true)
@@ -1306,9 +1292,7 @@ final class GitUICommands {
         }
     }
 
-
     func startEditGitAttributes() { startRepositoryFileEditor(.gitAttributes, owner: nil, onClosed: nil) }
-
 
     func startEditMailMap() { startRepositoryFileEditor(.mailMap, owner: nil, onClosed: nil) }
 
@@ -1343,7 +1327,6 @@ final class GitUICommands {
         }
     }
 
-
     @discardableResult
     func startAddToGitIgnore(localExclude: Bool, patterns: [String], owner: NSWindow) async -> Bool {
         guard let source = repositoryModule as? any RepositoryFileEditingDataSource else { return false }
@@ -1352,7 +1335,6 @@ final class GitUICommands {
         pluginEvent("PostEditGitIgnore", succeeded: true)
         return true
     }
-
 
     func startFileEditor(_ url: URL, showWarning: Bool = false, lineNumber: Int? = nil, displayName: String? = nil, owner: NSWindow? = nil, onClosed: (() -> Void)? = nil, onFinished: ((Bool) -> Void)? = nil) {
         let key = "file:" + url.standardizedFileURL.path
@@ -1378,7 +1360,6 @@ final class GitUICommands {
         }
     }
 
-
     func startEditGitConfig() {
         guard let browser, let owner = browser.view.window,
               let source = repositoryModule as? any RepositoryFileEditingDataSource else { return }
@@ -1387,8 +1368,6 @@ final class GitUICommands {
             catch { await MutationDialogs.showError(error, title: "Edit .git/config", window: owner) }
         }
     }
-
-
 
     func startSparseWorkingCopy() {
         let key = "sparse-working-copy"
@@ -1406,7 +1385,6 @@ final class GitUICommands {
             self?.showFileEditor(controller, owner: owner)
         }
     }
-
 
     func startRecoverLostObjects() {
         let key = "recover-lost-objects"
@@ -1483,9 +1461,6 @@ final class GitUICommands {
         }
     }
 
-
-
-
     func startBlame(file: String, revision: ObjectID? = nil, initialLine: Int? = nil, owner: NSWindow? = nil) {
         guard let source = repositoryModule as? any RepositoryBlameDataSource,
               let owner = owner ?? browser?.view.window else { return }
@@ -1506,7 +1481,6 @@ final class GitUICommands {
             } catch { await MutationDialogs.showError(error, title: "Blame", window: owner) }
         }
     }
-
 
     func startViewRevisions(_ selected: [Commit], owner: NSWindow? = nil) {
         if let first = selected.first {
@@ -1568,7 +1542,6 @@ final class GitUICommands {
         configureComparisonDiff(content.diff, owner: controller.window)
         content.diff.repositoryURL = URL(fileURLWithPath: request.identity.currentRepository.path)
         content.diff.isBareRepository = request.identity.currentRepository.isBare
-
 
         content.populate()
         content.onPickBranch = { [weak self, weak controller, weak content] first in
@@ -1949,7 +1922,6 @@ final class GitUICommands {
         }
     }
 
-
     private func resetFileStatusItems(_ items: [FileStatusListItem], toFirst: Bool, root: URL, source: any RepositoryFileStatusDataSource, owner: NSWindow, onFinished: ((Bool) -> Void)? = nil) {
         guard !items.isEmpty else { onFinished?(false); return }
         func isNew(_ file: ChangedFile) -> Bool { file.changeType == .added || file.changeType == .copied || !file.isTracked }
@@ -1995,7 +1967,6 @@ final class GitUICommands {
         }
     }
 
-
     private func startBlobDifftool(_ command: FileStatusListCommand, source: any RepositoryFileStatusDataSource, externalCommand: String, owner: NSWindow) {
         let items = command.items
         func specifier(_ side: (revision: RevisionID?, path: String)) async -> String? {
@@ -2022,7 +1993,6 @@ final class GitUICommands {
             catch { await Self.showMessage(error.localizedDescription, title: "Error", owner: owner) }
         }
     }
-
 
     private func saveFileStatusItems(_ items: [FileStatusListItem], root: URL, source: any RepositoryFileStatusDataSource, owner: NSWindow) {
         guard !items.isEmpty else { return }
@@ -2071,7 +2041,6 @@ final class GitUICommands {
         }
     }
 
-
     private func moveFileStatusItem(_ command: FileStatusListCommand, source: any RepositoryFileStatusDataSource, owner: NSWindow) {
         let isFolder = command.items.count != 1 && command.folder != nil
         guard let oldName = isFolder ? command.folder : command.items.first?.file.path ?? command.folder else { return }
@@ -2102,7 +2071,6 @@ final class GitUICommands {
         }
     }
 
-
     private func deleteFileStatusItems(_ items: [FileStatusListItem], source: any RepositoryFileStatusDataSource, owner: NSWindow) {
         guard let first = items.first, first.second.objectID == nil else { return }
         Task { @MainActor [weak self] in
@@ -2115,7 +2083,6 @@ final class GitUICommands {
             }
         }
     }
-
 
     private func startFileStatusSubmoduleAction(_ identifier: String, paths: [String], owner: NSWindow) {
         guard !paths.isEmpty, let parent = repositoryModule as? any RepositorySubmoduleManagingDataSource else { return }
@@ -2162,15 +2129,12 @@ final class GitUICommands {
         }
     }
 
-
-
     private func presentNextSubmoduleCommit(owner: NSWindow) {
         if let submoduleCommitWindowController { submoduleCommitWindowController.window?.makeKeyAndOrderFront(nil); return }
         guard !pendingSubmoduleCommits.isEmpty else { return }
         let child = pendingSubmoduleCommits.removeFirst()
         presentSubmoduleCommit(child, owner: owner)
     }
-
 
     private func presentSubmoduleCommit(_ child: any RepositoryBrowsingDataSource, owner: NSWindow) {
         if let submoduleCommitWindowController { submoduleCommitWindowController.window?.makeKeyAndOrderFront(nil); return }
@@ -2190,7 +2154,6 @@ final class GitUICommands {
                 if let owner { self?.presentNextSubmoduleCommit(owner: owner) }
             })
     }
-
 
     private func startInteractiveGit(_ command: GitCommand, root: URL, owner: NSWindow) {
         do {
@@ -2218,7 +2181,6 @@ final class GitUICommands {
             }
         }
     }
-
 
     static func openWith(_ url: URL, owner: NSWindow) {
         let panel = NSOpenPanel()
@@ -2260,7 +2222,7 @@ final class GitUICommands {
               !identity.currentRepository.isBare,
               let window = browser.view.window,
               let source = repositoryModule as? any RepositoryCommitWorkflowDataSource else {
-            browser?.showStatus("Commit is unavailable for mock data")
+            browser?.showStatus("Commit is unavailable for this repository")
             return
         }
 
@@ -2400,7 +2362,7 @@ final class GitUICommands {
         }
         guard let browser,
               let source = repositoryModule as? any RepositoryRemoteManagingDataSource else {
-            browser?.showStatus("Remote management is unavailable for this data source.")
+            browser?.showStatus("Remote management is unavailable for this repository.")
             return
         }
 
@@ -2523,7 +2485,7 @@ final class GitUICommands {
               browser.repositoryIdentity != nil,
               let window = owner ?? browser.view.window,
               let source = repositoryModule as? any RepositoryCherryPickDataSource else {
-            browser?.showStatus("Cherry-pick is unavailable for mock data")
+            browser?.showStatus("Cherry-pick is unavailable for this repository")
             return
         }
 
@@ -2714,7 +2676,7 @@ final class GitUICommands {
         guard let browser,
               let window = browser.view.window,
               let source = repositoryModule as? any RepositoryRebaseDataSource else {
-            browser?.showStatus("Rebase is unavailable for mock data")
+            browser?.showStatus("Rebase is unavailable for this repository")
             return
         }
         browser.startRebaseWorkflow(
@@ -2935,7 +2897,6 @@ final class GitUICommands {
         }
     }
 
-
     func startResetChanges(onlyWorkTree: Bool = false, onFinished: ((Bool) -> Void)? = nil) {
         guard let browser,
               let owner = browser.view.window,
@@ -3029,13 +2990,12 @@ final class GitUICommands {
         makeCheckoutWorkflowCoordinator()?.renameBranch(name)
     }
 
-
     func startCreateTag(initialTarget: ObjectID? = nil, owner: NSWindow? = nil, onFinished: ((Bool) -> Void)? = nil) {
         guard let browser,
               let window = owner ?? browser.view.window,
               let identity = browser.repositoryIdentity,
               let source = repositoryModule as? any RepositoryTagManagingDataSource else {
-            browser?.showStatus("Tag creation is unavailable for this data source")
+            browser?.showStatus("Tag creation is unavailable for this repository")
             return
         }
         let remote = preferredTagRemote(browser: browser)
@@ -3101,7 +3061,7 @@ final class GitUICommands {
               let references = browser.repositoryReferences,
               let navigation = browser.repositoryNavigation,
               let source = repositoryModule as? any RepositoryTagManagingDataSource else {
-            browser?.showStatus("Tag deletion is unavailable for this data source")
+            browser?.showStatus("Tag deletion is unavailable for this repository")
             return
         }
         guard !references.tags.isEmpty else {
@@ -3221,7 +3181,7 @@ final class GitUICommands {
         guard let browser,
               let window = browser.view.window,
               let source = repositoryModule as? any RepositoryConflictResolutionDataSource else {
-            browser?.showStatus("Conflict resolver is unavailable for mock data")
+            browser?.showStatus("Conflict resolver is unavailable for this repository")
             return
         }
 
@@ -3243,11 +3203,11 @@ final class GitUICommands {
               let context = browser.stashContext,
               let window = browser.view.window,
               let source = repositoryModule as? any RepositoryStashWorkflowDataSource else {
-            browser?.showStatus("Stash manager is unavailable for mock data")
+            browser?.showStatus("Stash manager is unavailable for this repository")
             return
         }
 
-        Task { @MainActor [weak browser] in
+        Task { @MainActor [self, weak browser] in
             guard let browser else { return }
             let result = await WorkflowManagementDialogs.manageStashes(
                 source: source,

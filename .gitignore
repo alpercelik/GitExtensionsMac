@@ -20,5 +20,4 @@ build/
 
 # Local editor and private parity-working notes
 .vscode/
-.build/
 .dev/

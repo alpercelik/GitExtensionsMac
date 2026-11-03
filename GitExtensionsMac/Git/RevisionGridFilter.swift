@@ -1,12 +1,9 @@
 import Foundation
 import GitExtensionsCore
 
-
 package enum RevisionSortOrder: String, Codable, Sendable, CaseIterable {
     case gitDefault, authorDate, topology
 }
-
-
 
 package struct RevisionGridFilter: Codable, Equatable, Sendable {
     package var byDateFrom = false
@@ -44,7 +41,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
 
     package init() {}
 
-
     package var effectiveAuthor: String { byAuthor ? author : "" }
     package var effectiveCommitter: String { byCommitter ? committer : "" }
     package var effectiveMessage: String { byMessage ? message : "" }
@@ -57,7 +53,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
     package var isShowCurrentBranchOnlyChecked: Bool { showCurrentBranchOnly }
     package var isShowFilteredBranchesChecked: Bool { byBranchFilter && !showCurrentBranchOnly }
 
-
     package var hasRevisionFilter: Bool {
         byAuthor || byCommitter || byMessage || byDiffContent
             || !effectivePathFilter.trimmingCharacters(in: .whitespaces).isEmpty
@@ -69,14 +64,11 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
             || !effectiveBranchFilter.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-
-
     package mutating func resetAllFilters() {
         byDateFrom = false; byDateTo = false; byAuthor = false; byCommitter = false
         byMessage = false; byDiffContent = false; byPathFilter = false; byBranchFilter = false
         showOnlyFirstParent = false; hideMergeCommits = false; showSimplifyByDecoration = false
     }
-
 
     package mutating func setBranchFilter(_ filter: String) {
         showCurrentBranchOnly = false
@@ -84,7 +76,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         byBranchFilter = !value.isEmpty
         branchFilter = value
     }
-
 
     package struct TextFilter: Equatable, Sendable {
         package var text: String
@@ -97,7 +88,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         }
     }
 
-
     package mutating func apply(_ filter: TextFilter) -> Bool {
         var changed = filter.author != byAuthor || filter.committer != byCommitter
             || filter.message != byMessage || filter.diffContent != byDiffContent
@@ -109,14 +99,12 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         return changed
     }
 
-
     private static func gitDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd hh:mm:ss"
         return formatter.string(from: date)
     }
-
 
     package func revisionArguments(currentCheckout: ObjectID?, defaultCommitsLimit: Int, showStashes: Bool,
                                    showGitNotes: Bool, showSessionRefs: Bool) -> [String] {
@@ -176,7 +164,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         return arguments
     }
 
-
     package static func splitOptions(_ text: String) -> [String] {
         var result: [String] = []
         var current = ""
@@ -197,7 +184,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         return result
     }
 
-
     package var pathArguments: [String] {
         let path = effectivePathFilter.trimmingCharacters(in: .whitespaces)
         guard !path.isEmpty else { return [] }
@@ -208,7 +194,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         let paths = pathArguments
         return paths.count == 1 && !paths[0].hasSuffix("/")
     }
-
 
     package var summary: String {
         var lines: [String] = []
@@ -228,7 +213,6 @@ package struct RevisionGridFilter: Codable, Equatable, Sendable {
         return lines.map { $0 + "\n" }.joined()
     }
 }
-
 
 package enum RevisionLogCommands {
     package static func format(notes: Bool) -> String {
@@ -263,7 +247,6 @@ package enum RevisionLogCommands {
         var revision: ObjectID?
         for raw in output.split(separator: "\0", omittingEmptySubsequences: false) {
 
-
             let token = raw.hasPrefix("\n") ? String(raw.dropFirst()) : String(raw)
             if !raw.hasPrefix("\n"), token.hasPrefix(followPrefix),
                let parsed = try? ObjectID.parse(String(token.dropFirst(followPrefix.count))) {
@@ -290,7 +273,6 @@ package enum RevisionLogCommands {
     }
 }
 
-
 package protocol RepositoryRevisionGridDataSource: Sendable {
 
     func resolveRevision(_ expression: String) async -> ObjectID?
@@ -305,7 +287,6 @@ package protocol RepositoryRevisionGridDataSource: Sendable {
 
     func superprojectInfo(branches: Bool, remoteBranches: Bool, tags: Bool) async -> SuperprojectInfo?
 }
-
 
 package struct AheadBehindData: Equatable, Sendable {
     package static let gone = "gone"
@@ -344,11 +325,9 @@ package struct AheadBehindData: Equatable, Sendable {
         return text
     }
 
-
     package static let command = GitCommand(
         arguments: ["for-each-ref", "--format=%(push:track,nobracket)%00%(upstream:track,nobracket)%00%(push)%00%(upstream)%00%(refname:short)%00", "refs/heads/"],
         accessesRemote: false, changesRepositoryState: false)
-
 
     package static func parse(_ output: String) -> [String: AheadBehindData] {
         var fields = output.components(separatedBy: "\0").map { $0.trimmingCharacters(in: .newlines) }
@@ -378,7 +357,6 @@ package struct AheadBehindData: Equatable, Sendable {
         return result
     }
 }
-
 
 package struct SuperprojectInfo: Equatable, Sendable {
     package static let maxRefs = 4
@@ -410,13 +388,11 @@ package struct SuperprojectInfo: Equatable, Sendable {
         }
     }
 
-
     package static func parseStatus(_ output: String) -> (code: Character, commit: ObjectID)? {
         guard let line = output.split(separator: "\n").first, let hash = line.dropFirst().split(separator: " ").first,
               let id = try? ObjectID.parse(String(hash)) else { return nil }
         return (line.first!, id)
     }
-
 
     package mutating func applyConflict(_ output: String) {
         for record in output.split(separator: "\0") {
@@ -431,14 +407,12 @@ package struct SuperprojectInfo: Equatable, Sendable {
         }
     }
 
-
     package static func reference(_ fullName: String) -> RevisionReference? {
         if fullName.hasPrefix("refs/heads/") { return .init(id: fullName, name: String(fullName.dropFirst(11)), kind: .localBranch) }
         if fullName.hasPrefix("refs/remotes/") { return .init(id: fullName, name: String(fullName.dropFirst(13)), kind: .remoteBranch) }
         if fullName.hasPrefix("refs/tags/") { return .init(id: fullName, name: String(fullName.dropFirst(10)), kind: .tag) }
         return nil
     }
-
 
     package static func parseTreeCommit(_ output: String) -> ObjectID? {
         guard let line = output.split(separator: "\n").first else { return nil }
@@ -459,7 +433,6 @@ package enum RevisionGridCommands {
         return GitCommand(arguments: arguments, accessesRemote: false, changesRepositoryState: false)
     }
 }
-
 
 package enum RevisionDiffArguments {
     package static func arguments(first: RevisionID?, second: RevisionID?) -> [String] {

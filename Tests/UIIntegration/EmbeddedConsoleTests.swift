@@ -16,7 +16,7 @@ extension UIIntegrationTests {
         }
 
         private static func text(_ console: EmbeddedConsoleViewController) -> String {
-            guard let terminal = console.terminalView?.getTerminal() else { return "" }
+            guard let terminal = console.terminalView else { return "" }
             return String(decoding: terminal.getBufferAsData(), as: UTF8.self)
         }
 
@@ -76,6 +76,7 @@ extension UIIntegrationTests {
             let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 800, height: 400), styleMask: [.titled, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentViewController = console
+            window.setContentSize(NSSize(width: 800, height: 400))
             window.makeKeyAndOrderFront(nil)
             defer {
                 console.stop()
@@ -147,6 +148,7 @@ extension UIIntegrationTests {
             window.isReleasedWhenClosed = false
             window.appearance = light
             window.contentViewController = console
+            window.setContentSize(NSSize(width: 700, height: 300))
             window.makeKeyAndOrderFront(nil)
             defer {
                 console.stop()
@@ -170,14 +172,14 @@ extension UIIntegrationTests {
             #expect(lightness(terminal.nativeBackgroundColor) > 0.8 && lightness(terminal.nativeForegroundColor) < 0.3, "light appearance uses light terminal colors")
             #expect(terminal.appliedPalette == ConsoleTerminalView.palette(dark: false), "light ANSI palette")
             let before = text(console)
-            let cursor = terminal.getTerminal().getCursorLocation()
+            let cursor = terminal.terminalStateSnapshot().cursor
             window.appearance = dark
             try await Task.sleep(for: .milliseconds(300))
             #expect(lightness(terminal.nativeBackgroundColor) < 0.3 && lightness(terminal.nativeForegroundColor) > 0.7, "dark appearance recolors the running terminal")
             #expect(terminal.appliedPalette == ConsoleTerminalView.palette(dark: true), "dark ANSI palette")
             #expect(console.terminalView === terminal && terminal.process.running && terminal.process.shellPid == pid, "same shell session survives the appearance change")
             #expect(text(console) == before, "scrollback is preserved and no prompt is redrawn")
-            #expect(terminal.getTerminal().getCursorLocation() == cursor, "cursor position is preserved")
+            #expect(terminal.terminalStateSnapshot().cursor == cursor, "cursor position is preserved")
             #expect(window.firstResponder === terminal, "focus stays in the terminal")
             window.appearance = light
             try await Task.sleep(for: .milliseconds(300))
@@ -207,6 +209,7 @@ extension UIIntegrationTests {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 300), styleMask: [.titled, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentViewController = console
+            window.setContentSize(NSSize(width: 800, height: 300))
             window.makeKeyAndOrderFront(nil)
             defer {
                 console.stop()
@@ -247,6 +250,7 @@ extension UIIntegrationTests {
             let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentViewController = console
+            window.setContentSize(NSSize(width: 440, height: 300))
             window.makeKeyAndOrderFront(nil)
             defer {
                 console.stop()

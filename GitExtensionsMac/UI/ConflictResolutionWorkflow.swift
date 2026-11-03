@@ -194,6 +194,8 @@ final class ConflictResolutionWorkflow {
         let merged = try? await source.conflictWorkingTreeURL(path: conflict.path)
         let before = merged.flatMap(Self.modificationDate) ?? Date()
         let status: Int32
+        let activation = ExternalToolActivation.bringToFront(executable: executable)
+        defer { activation?.cancel() }
         do {
             status = try await source.runExternalMergeTool(executable: executable, arguments: arguments)
         } catch is CancellationError {
@@ -337,6 +339,35 @@ final class ConflictResolutionWorkflow {
         case .keepRemote: await select(.remote, conflict)
         case .keepBase: await select(.base, conflict)
         case .none: break
+        }
+    }
+}
+
+@MainActor
+enum ExternalToolActivation {
+    static func bundleIdentifier(executable: String) -> String? {
+        var url = URL(fileURLWithPath: executable).resolvingSymlinksInPath().deletingLastPathComponent()
+        while url.path != "/" {
+            if url.pathExtension == "app" { return Bundle(url: url)?.bundleIdentifier }
+            url.deleteLastPathComponent()
+        }
+        return nil
+    }
+
+    static func bringToFront(executable: String) -> Task<Void, Never>? {
+        guard let identifier = bundleIdentifier(executable: executable) else { return nil }
+        let existing = Set(NSRunningApplication.runningApplications(withBundleIdentifier: identifier).map(\.processIdentifier))
+        if #available(macOS 14, *) { NSApp.yieldActivation(toApplicationWithBundleIdentifier: identifier) }
+        return Task { @MainActor in
+            for _ in 0..<150 {
+                if let launched = NSRunningApplication.runningApplications(withBundleIdentifier: identifier).first(where: {
+                    !existing.contains($0.processIdentifier) && $0.activationPolicy == .regular && $0.isFinishedLaunching
+                }) {
+                    if #available(macOS 14, *) { launched.activate(from: .current) } else { launched.activate(options: []) }
+                    return
+                }
+                do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 @MainActor
 struct DashboardTheme {
     let searchBack: NSColor
@@ -36,7 +35,6 @@ struct DashboardTheme {
     }
 }
 
-
 @MainActor
 final class DashboardViewController: NSViewController {
     var onOpenRepository: (() -> Void)?
@@ -47,7 +45,8 @@ final class DashboardViewController: NSViewController {
 
     static let translateURL = URL(string: "https://github.com/gitextensions/gitextensions/wiki/Translations")!
     static let developURL = URL(string: "https://github.com/gitextensions/gitextensions")!
-    static let issuesURL = URL(string: "https://github.com/gitextensions/gitextensions/issues")!
+    static let projectURL = URL(string: "https://github.com/norgera/GitExtensionsMac")!
+    static let issuesURL = URL(string: "https://github.com/norgera/GitExtensionsMac/issues")!
     static let donationURL = URL(string: "https://opencollective.com/gitextensions")!
 
     private let store: AppSettingsStore
@@ -160,7 +159,6 @@ final class DashboardViewController: NSViewController {
         if theme.backgroundImage != background.imageName { applyTheme() }
     }
 
-
     func refreshContent() {
         applyTheme()
         repositoriesList.showRecentRepositories(reloadData: true)
@@ -208,7 +206,6 @@ final class DashboardViewController: NSViewController {
     }
 }
 
-
 final class DashboardBackgroundView: NSView {
     var imageName = "" { didSet { if oldValue != imageName { needsDisplay = true } } }
     var onDrop: ((URL) -> Void)?
@@ -233,7 +230,6 @@ final class DashboardBackgroundView: NSView {
         return urls[0]
     }
 
-
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         Self.directory(from: sender) == nil ? [] : .copy
     }
@@ -253,7 +249,6 @@ final class DashboardColorView: NSView {
         dirtyRect.intersection(bounds).fill(using: .sourceOver)
     }
 }
-
 
 final class DashboardLinkButton: NSButton {
     var callback: (() -> Void)?
@@ -295,7 +290,6 @@ final class DashboardLinkButton: NSButton {
     override func mouseEntered(with event: NSEvent) { updateTitle(hovered: true) }
     override func mouseExited(with event: NSEvent) { updateTitle(hovered: false) }
 }
-
 
 @MainActor
 final class UserRepositoriesListViewController: NSViewController, NSCollectionViewDataSource, NSCollectionViewDelegateFlowLayout, NSSearchFieldDelegate, NSMenuDelegate {
@@ -442,7 +436,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         errorLabel.isHidden = false
     }
 
-
     func showRecentRepositories(reloadData: Bool) {
         if reloadData {
             branchNames.removeAll()
@@ -509,7 +502,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         }
     }
 
-
     private func tileSize() -> NSSize {
         let captions = groups.flatMap(\.tiles).map(\.caption)
         guard !captions.isEmpty else { return NSSize(width: 350, height: 50) }
@@ -530,8 +522,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
     }
 
     var selectedTile: Tile? { collectionView.selectionIndexPaths.first.flatMap(tile(at:)) }
-
-
 
     func numberOfSections(in collectionView: NSCollectionView) -> Int { groups.count }
 
@@ -563,8 +553,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         NSSize(width: collectionView.bounds.width, height: 30)
     }
 
-
-
     @objc private func searchChanged() { showRecentRepositories(reloadData: false) }
 
     func controlTextDidChange(_ obj: Notification) { showRecentRepositories(reloadData: false) }
@@ -583,7 +571,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         }
     }
 
-
     func focusList() {
         view.window?.makeFirstResponder(collectionView)
         if collectionView.selectionIndexPaths.isEmpty, !groups.isEmpty {
@@ -592,7 +579,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
             collectionView.scrollToItems(at: [first], scrollPosition: .nearestHorizontalEdge)
         }
     }
-
 
     func moveUpFromTopRow() -> Bool {
         guard let selected = collectionView.selectionIndexPaths.first,
@@ -603,9 +589,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         return true
     }
 
-
-
-
     func tryOpenRepository(_ tile: Tile) {
         if RepositoryHistory.isValidGitWorkingDir(tile.repository.path) {
             onOpenRepository?(URL(fileURLWithPath: tile.repository.path, isDirectory: true))
@@ -615,7 +598,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
             if removed { self?.showRecentRepositories(reloadData: true) }
         }
     }
-
 
     func openDropped(_ url: URL) {
         guard RepositoryHistory.isValidGitWorkingDir(url.path) else {
@@ -628,8 +610,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         }
         onOpenRepository?(URL(fileURLWithPath: RepositoryHistory.normalizedPath(url.path), isDirectory: true))
     }
-
-
 
     func contextMenu(for indexPath: IndexPath) -> NSMenu? {
         guard let tile = tile(at: indexPath) else { return nil }
@@ -662,7 +642,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         }
     }
 
-
     private var categories: [String] {
         var result: [String] = []
         for tile in groups.flatMap(\.tiles) {
@@ -672,7 +651,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         }
         return result.sorted { $0.compare($1, locale: .current) == .orderedAscending }
     }
-
 
     private func categoriesMenu(for tile: Tile) -> NSMenu {
         let menu = NSMenu()
@@ -729,8 +707,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
         store.removeInvalidRepositories()
         showRecentRepositories(reloadData: true)
     }
-
-
 
     private func showCategoryMenu(for section: Int, from view: NSView) {
         guard section < groups.count else { return }
@@ -795,7 +771,6 @@ final class UserRepositoriesListViewController: NSViewController, NSCollectionVi
     }
 }
 
-
 final class UserRepositoriesCollectionView: NSCollectionView {
     weak var owner: UserRepositoriesListViewController?
 
@@ -844,7 +819,6 @@ final class DashboardClosureMenuItem: NSMenuItem {
     @objc private func invoke() { handler() }
 }
 
-
 final class DashboardGroupHeader: NSView, NSCollectionViewElement {
     static let identifier = NSUserInterfaceItemIdentifier("DashboardGroupHeader")
     private let label = NSTextField(labelWithString: "")
@@ -885,7 +859,6 @@ final class DashboardGroupHeader: NSView, NSCollectionViewElement {
 
     @objc private func invoke() { handler?() }
 }
-
 
 final class DashboardRepositoryItem: NSCollectionViewItem {
     static let identifier = NSUserInterfaceItemIdentifier("DashboardRepositoryItem")
@@ -966,7 +939,6 @@ final class DashboardTileView: NSView {
     }
 }
 
-
 @MainActor
 final class DashboardCategoryTitleDialog: NSViewController, NSTextFieldDelegate {
     private let field = NSTextField()
@@ -1027,11 +999,9 @@ final class DashboardCategoryTitleDialog: NSViewController, NSTextFieldDelegate 
         field.selectText(nil)
     }
 
-
     func controlTextDidChange(_ obj: Notification) {
         okButton.isEnabled = field.stringValue != (originalName ?? "") || originalName == nil
     }
-
 
     @objc private func ok() {
         let name = field.stringValue
@@ -1058,7 +1028,6 @@ final class DashboardCategoryTitleDialog: NSViewController, NSTextFieldDelegate 
     }
 }
 
-
 @MainActor
 enum UserEnvironmentInformation {
     static func information(gitVersion: String?) -> String {
@@ -1079,13 +1048,11 @@ enum UserEnvironmentInformation {
 
     static func information() async -> String { information(gitVersion: await gitVersion()) }
 
-
     static func copyInformation() async {
         let text = await information()
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
     }
-
 
     static func copyInformationAndOpenIssues() {
         Task { @MainActor in
@@ -1096,7 +1063,6 @@ enum UserEnvironmentInformation {
 
     static let lastSupportedVersion = "2.43.0"
     static let lastRecommendedVersion = "2.53.0"
-
 
     static func gitVersionInfo(_ version: String?) -> String {
         guard let version, !version.isEmpty else {
@@ -1112,7 +1078,6 @@ enum UserEnvironmentInformation {
     }
 
     private static var cachedGitVersion: String?
-
 
     static func gitVersion() async -> String? {
         if let cachedGitVersion { return cachedGitVersion }

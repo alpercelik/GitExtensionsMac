@@ -2,7 +2,6 @@ import AppKit
 import GitCommands
 import GitExtensionsCore
 
-
 @MainActor
 final class FileHistoryWindowController: NSWindowController, NSWindowDelegate {
     let controller: FileHistoryViewController
@@ -228,7 +227,6 @@ final class FileHistoryViewController: NSViewController, NSMenuDelegate {
             let split = RetainingSplitViewController(resizeBehavior: .fixedLeadingPane)
             split.splitView.isVertical = false
 
-
             split.view.frame = NSRect(x: 0, y: 0, width: 748, height: 300)
             split.addSplitViewItem(NSSplitViewItem(viewController: first))
             split.addSplitViewItem(NSSplitViewItem(viewController: second))
@@ -304,8 +302,8 @@ final class FileHistoryViewController: NSViewController, NSMenuDelegate {
                           remote: request.references.branches.filter(\.isRemote).map(\.name), tags: request.references.tags.map(\.name))
                 }
                 grid.updateFilter(refresh: false) { filter in
-                    filter.byPathFilter = true; filter.pathFilter = "\"" + file.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
-                    if wantsRevisionFilter, let id = initialRevision?.objectID { filter.byBranchFilter = true; filter.branchFilter = id.string }
+                    filter.byPathFilter = true; filter.pathFilter = "\"" + self.file.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\""
+                    if self.wantsRevisionFilter, let id = self.initialRevision?.objectID { filter.byBranchFilter = true; filter.branchFilter = id.string }
                 }
                 wantsRevisionFilter = false
                 var options = grid.readOptions
@@ -356,7 +354,6 @@ final class FileHistoryViewController: NSViewController, NSMenuDelegate {
                 if fileView.canBlame { diff.supportedFileCommands.insert("file.blame") }
                 else { diff.supportedFileCommands.remove("file.blame") }
                 let children = CommitRelationsResolver.resolve(commit: commit, history: revisions).childIDs
-
 
                 let actual = if let id = commit.objectID, let resolved = source as? any RepositoryBlameDataSource {
                     try await resolved.loadBlameRevision(id)
@@ -605,7 +602,7 @@ final class FileHistoryViewController: NSViewController, NSMenuDelegate {
             let values = (try? BuildServerSettingsStore(locations: locations).values(.effective)) ?? [:]
             let resolved = await BuildServerAdapterResolver.resolve(settings: values, remotes: configs, currentRemote: nil,
                 credential: { await hosting?.hostCredentialPassword(for: $0) },
-                isCommitVisible: { [weak self] id in await MainActor.run { self?.revisions.contains { $0.id == .object(id) } ?? false } })
+                isCommitVisible: { [weak self] id in await MainActor.run { [weak self] in self?.revisions.contains { $0.id == .object(id) } ?? false } })
             guard let self, !Task.isCancelled else { return }
             showBuildReport = BuildServerSettingsStore.bool(values[BuildServerSettingKeys.showBuildResultPage]) ?? false
             grid.setBuildStatusColumn(enabled: resolved.adapter != nil || resolved.explicitlyEnabled)

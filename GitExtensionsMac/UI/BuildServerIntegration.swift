@@ -55,7 +55,7 @@ enum BuildServerAdapterResolver {
     }
     static func resolve(settings: [String: String], remotes: [RepositoryRemoteConfiguration], currentRemote: String?,
                         credential: @escaping (URL) async -> String?, transport: @escaping HostTransport = HostHTTP.send,
-                        token: (String) -> String? = BuildServerSettingsStore.token,
+                        token: @MainActor (String) -> String? = BuildServerSettingsStore.token,
                         buildCredentials: @escaping BuildServerCredentialProvider = { key, stored in
                             await GitUICommands.requestBuildServerCredentials(key: key, useStored: stored)
                         }, isCommitVisible: @escaping @Sendable (ObjectID) async -> Bool = { _ in true }) async -> Resolution {

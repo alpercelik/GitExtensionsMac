@@ -517,11 +517,9 @@ package enum FileChangeType: String, Hashable, Sendable {
     }
 }
 
-
 package enum FileStagedStatus: String, Hashable, Sendable {
     case unset, none, workTree, index, unknown
 }
-
 
 package enum DiffBranchStatus: Hashable, Sendable {
     case unknown, onlyA, onlyB, same, unequal

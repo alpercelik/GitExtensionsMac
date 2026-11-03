@@ -807,7 +807,8 @@ enum MutationDialogs {
 
     static func confirmSuppressible(_ alert: NSAlert, window: NSWindow?,
                                     suppressedBy key: WritableKeyPath<ConfirmationPreferences, Bool>,
-                                    store: AppSettingsStore = .shared) async -> Bool {
+                                    store: AppSettingsStore? = nil) async -> Bool {
+        let store = store ?? .shared
         if store.confirmationPreferences[keyPath: key] { return true }
         alert.showsSuppressionButton = true
         alert.suppressionButton?.title = dontShowAgain

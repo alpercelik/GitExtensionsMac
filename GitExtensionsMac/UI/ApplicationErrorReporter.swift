@@ -60,8 +60,9 @@ struct ErrorReportContext {
     var isExternalOperation = false
     var isUserExternalOperation = false
     var isTerminating = false
+    var isPreviousSession = false
     var canIgnore: Bool { !isTerminating }
-    var showIgnore: Bool { isExternalOperation }
+    var showIgnore: Bool { isExternalOperation || isPreviousSession }
     var focusDetails: Bool { isUserExternalOperation }
 }
 
@@ -77,11 +78,11 @@ struct ErrorReportContent {
         return info + "```\n" + exception.details.trimmingCharacters(in: .whitespacesAndNewlines) + "\n```\n\n" + additional
     }
     func copyText(description: String) -> String { environment + details(description: description) }
-    func issueURL(description: String, base: String = "https://github.com/gitextensions/gitextensions/issues/new") -> URL? {
+    func issueURL(description: String, base: String = "https://github.com/norgera/GitExtensionsMac/issues/new") -> URL? {
         guard let url = URL(string: base), ["https", "http"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else { return nil }
         var title = "[NBug] " + exception.message
         if (title as NSString).length > 69 { title = (title as NSString).substring(to: 66) + "..." }
-        let fields = [("title", title), ("template", "bug_report.yml"), ("labels", "type: NBug"),
+        let fields = [("title", title), ("template", "bug_report.yml"), ("labels", "bug"),
                       ("about", environment), ("description", details(description: description))]
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
         let query = fields.map { $0.0 + "=" + ($0.1.addingPercentEncoding(withAllowedCharacters: allowed) ?? "") }.joined(separator: "&")
@@ -192,6 +193,10 @@ final class ErrorReportWindow: NSWindowController, NSWindowDelegate, NSOutlineVi
         send.image = AppKitFactory.resourceImage("GitHub"); send.imagePosition = .imageLeft
         send.target = self; send.action = #selector(sendReport); send.isEnabled = !context.focusDetails
         send.toolTip = "Report the issue to GitHub and quit application.\nA valid GitHub account is required"
+        if context.isPreviousSession {
+            send.title = "Send"
+            send.toolTip = "Report the issue to GitHub.\nA valid GitHub account is required"
+        }
         ignore.target = self; ignore.action = #selector(ignoreReport); ignore.isHidden = !context.showIgnore; ignore.isEnabled = context.canIgnore
         quit.target = self; quit.action = #selector(quitReport); quit.keyEquivalent = "\u{1b}"; quit.toolTip = "Quit application without reporting the issue"
         let spacer = NSView(); spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -206,7 +211,9 @@ final class ErrorReportWindow: NSWindowController, NSWindowDelegate, NSOutlineVi
     private func generalView(gitVersion: String) -> NSView {
         let root = NSStackView(); root.orientation = .vertical; root.alignment = .leading; root.spacing = 6
         root.edgeInsets = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        let warning = NSTextField(wrappingLabelWithString: "The application has crashed and it will now be terminated. If you click Quit, the application will close immediately. If you click Send and Quit, the application will close and a bug report will be sent.")
+        let warning = NSTextField(wrappingLabelWithString: context.isPreviousSession
+            ? "The application crashed the last time it was used. If you click Send, a bug report will be sent. If you click Ignore, the application will continue."
+            : "The application has crashed and it will now be terminated. If you click Quit, the application will close immediately. If you click Send and Quit, the application will close and a bug report will be sent.")
         let warningIcon = NSImageView(image: NSImage(named: NSImage.cautionName)!)
         warningIcon.widthAnchor.constraint(equalToConstant: 32).isActive = true
         let warningRow = NSStackView(views: [warningIcon, warning]); warningRow.spacing = 8
@@ -296,7 +303,7 @@ final class ErrorReportWindow: NSWindowController, NSWindowDelegate, NSOutlineVi
             window?.makeFirstResponder(descriptionInput); return
         }
         guard confirmSend(), let url = content.issueURL(description: descriptionInput.string), openAction(url) else { return }
-        quitReport()
+        if context.isPreviousSession { NSApp.stopModal(withCode: .OK) } else { quitReport() }
     }
     @objc func ignoreReport() { if context.showIgnore && context.canIgnore { NSApp.stopModal(withCode: .OK) } }
     @objc func quitReport() { result = .quit; NSApp.stopModal(withCode: .cancel) }
@@ -329,6 +336,79 @@ enum ApplicationErrorReporter {
                 NSApp.terminate(nil)
             }
         }
+    }
+}
+
+extension ApplicationErrorReporter {
+    private static var checkedPreviousCrash = false
+    static func reportPreviousCrash(owner: NSWindow?) async {
+        guard !checkedPreviousCrash else { return }
+        checkedPreviousCrash = true
+        guard let snapshot = PreviousCrashReport.check() else { return }
+        let version = await UserEnvironmentInformation.gitVersion()
+        let content = ErrorReportContent(exception: snapshot, environment: UserEnvironmentInformation.information(gitVersion: version))
+        if ErrorReportWindow(content: content, context: .init(isPreviousSession: true), gitVersion: version ?? "").run(owner: owner) == .quit {
+            NSApp.terminate(nil)
+        }
+    }
+}
+
+enum PreviousCrashReport {
+    static let checkedThroughKey = "GitExtensionsMac.crashReportsCheckedThrough"
+    static var directory: URL {
+        let home = getpwuid(getuid())?.pointee.pw_dir.map { String(cString: $0) } ?? NSHomeDirectory()
+        return URL(fileURLWithPath: home, isDirectory: true).appendingPathComponent("Library/Logs/DiagnosticReports", isDirectory: true)
+    }
+
+    static func check(defaults: UserDefaults = .standard, directory: URL = directory,
+                      processName: String = ProcessInfo.processInfo.processName, now: Date = Date()) -> ExceptionReportSnapshot? {
+        let checkedThrough = defaults.object(forKey: checkedThroughKey) as? Date
+        defaults.set(now, forKey: checkedThroughKey)
+        guard let checkedThrough else { return nil }
+        let reports = ((try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey])) ?? [])
+            .filter { $0.lastPathComponent.hasPrefix(processName + "-") && $0.pathExtension == "ips" }
+            .compactMap { url -> (URL, Date)? in
+                guard let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate,
+                      modified > checkedThrough, modified <= now else { return nil }
+                return (url, modified)
+            }
+            .sorted { $0.1 > $1.1 }
+        for (url, _) in reports {
+            if let data = try? Data(contentsOf: url), let snapshot = snapshot(from: data, path: url.path) { return snapshot }
+        }
+        return nil
+    }
+
+    static func snapshot(from data: Data, path: String) -> ExceptionReportSnapshot? {
+        guard let newline = data.firstIndex(of: 10),
+              let header = try? JSONSerialization.jsonObject(with: data[..<newline]) as? [String: Any],
+              header["bug_type"] as? String == "309",
+              let body = try? JSONSerialization.jsonObject(with: data[data.index(after: newline)...]) as? [String: Any]
+        else { return nil }
+        let exception = body["exception"] as? [String: Any] ?? [:]
+        let exceptionType = exception["type"] as? String ?? "Crash"
+        let type = (exception["signal"] as? String).map { "\(exceptionType) (\($0))" } ?? exceptionType
+        let abortMessages = (body["asi"] as? [String: [String]] ?? [:]).sorted { $0.key < $1.key }.flatMap(\.value)
+        let indicator = (body["termination"] as? [String: Any])?["indicator"] as? String
+        let message = abortMessages.isEmpty ? indicator ?? "The application terminated unexpectedly." : abortMessages.joined(separator: "\n")
+        let images = (body["usedImages"] as? [[String: Any]] ?? []).map { $0["name"] as? String ?? "???" }
+        let threads = body["threads"] as? [[String: Any]] ?? []
+        let faulting = body["faultingThread"] as? Int ?? threads.firstIndex { $0["triggered"] as? Bool == true } ?? 0
+        let frames = body["lastExceptionBacktrace"] as? [[String: Any]]
+            ?? (threads.indices.contains(faulting) ? threads[faulting]["frames"] as? [[String: Any]] ?? [] : [])
+        let entries = frames.map { frame -> (image: String, symbol: String) in
+            let image = (frame["imageIndex"] as? Int).flatMap { images.indices.contains($0) ? images[$0] : nil } ?? "???"
+            let symbol = (frame["symbol"] as? String).map { name in (frame["symbolLocation"] as? Int).map { "\(name) + \($0)" } ?? name }
+                ?? "0x" + String(frame["imageOffset"] as? Int ?? 0, radix: 16)
+            return (image, symbol)
+        }
+        let lines = entries.enumerated().map { "\($0.offset)  \($0.element.image)  \($0.element.symbol)" }
+        let application = header["name"] as? String ?? header["app_name"] as? String
+        let site = entries.indices.first { entries[$0].image == application }.map { lines[$0] } ?? lines.first
+        var properties = [ExceptionReportProperty(name: "Crash report", value: path)]
+        if let timestamp = header["timestamp"] as? String { properties.append(.init(name: "Time", value: timestamp)) }
+        return ExceptionReportSnapshot(type: type, message: message, targetSite: site, source: header["bundleID"] as? String,
+                                       stackTrace: lines.isEmpty ? nil : lines.joined(separator: "\n"), data: properties)
     }
 }
 

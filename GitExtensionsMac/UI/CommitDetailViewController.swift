@@ -2,8 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
-
 @MainActor
 final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
 
@@ -30,7 +28,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
     private var tagOrderTask: Task<Void, Never>?
     private var tagOrder: [String: Int]?
     private var brokenRefsReported = false
-
 
     private(set) var body = ""
     private(set) var notes = ""
@@ -110,8 +107,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         documentView.frame.size.height = max(scrollView.contentSize.height, stack.fittingSize.height)
     }
 
-
-
     func apply(commit: Commit, children: [RevisionID]) {
         if self.commit?.id != commit.id { linksInfo = [] }
         self.commit = commit
@@ -124,7 +119,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         avatar.apply(name: commit.authorName, email: commit.authorEmail)
         reloadCommitInfo()
     }
-
 
     var displayedAvatarSize: CGFloat { avatarSizeConstraints.first?.constant ?? 0 }
 
@@ -139,7 +133,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         _ = view
         stack.isHidden = true
     }
-
 
     func repositoryChanged() {
         tagOrder = nil
@@ -224,7 +217,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         }
     }
 
-
     func applyExternalLinks(_ links: [RevisionLinkDefinition.Link], error: String? = nil) {
         var runs: [CommitInfoPresentation.Run] = []
         var seen: [RevisionLinkDefinition.Link] = []
@@ -237,8 +229,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         if let error { linksInfo.append(.init("\nRevision links: \(error)")) }
         updateRevisionInfo()
     }
-
-
 
     private var linkAttributes: [NSAttributedString.Key: Any] { [.foregroundColor: NSColor.linkColor, .cursor: NSCursor.pointingHand] }
 
@@ -269,7 +259,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         return result
     }
 
-
     private func renderMessage(links: [String: ObjectID]) {
         let text = CommitInfoPresentation.bodyAndNotes(body, notes: notes).trimmingCharacters(in: .whitespacesAndNewlines)
         let font = messageText.font ?? .systemFont(ofSize: 12)
@@ -283,7 +272,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         messageText.setContent(result)
         view.needsLayout = true
     }
-
 
     private func updateRevisionInfo() {
         let font = revisionInfoText.font ?? .systemFont(ofSize: 11)
@@ -319,17 +307,13 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         view.needsLayout = true
     }
 
-
     var revisionInfoString: String { revisionInfoText.string }
-
-
 
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
         guard let url = (link as? URL) ?? (link as? String).flatMap(URL.init(string:)) else { return false }
         execute(url)
         return true
     }
-
 
     func execute(_ url: URL) {
         guard let link = CommitInfoPresentation.Link(url: url) else { return }
@@ -353,8 +337,6 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
     func otherMouseDown(button: Int) {
         if button == 3 { onNavigate?(true) } else if button == 4 { onNavigate?(false) }
     }
-
-
 
     func contextMenu(link: URL?) -> NSMenu {
         let menu = NSMenu()
@@ -407,13 +389,9 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         NSPasteboard.general.setString(text, forType: .string)
     }
 
-
     var commitInfoText: String {
         "\(CommitInfoPresentation.plainHeader(headerRows))\n\n\(messageText.string)"
     }
-
-
-
 
     func addNotes() {
         guard let commit, !commit.isArtificial, let objectID = commit.objectID, let source, let window = view.window else { return }
@@ -447,7 +425,6 @@ private extension ApplicationKeyChord {
     }
 }
 
-
 final class CommitInfoTextView: NSTextView {
     weak var owner: CommitDetailViewController?
 
@@ -476,7 +453,6 @@ final class CommitInfoTextView: NSTextView {
         return NSSize(width: NSView.noIntrinsicMetric, height: ceil(layoutManager.usedRect(for: textContainer).height))
     }
 
-
     func setContent(_ text: NSAttributedString) {
         textStorage?.setAttributedString(text)
         invalidateIntrinsicContentSize()
@@ -498,7 +474,6 @@ final class CommitInfoTextView: NSTextView {
         super.layout()
         invalidateIntrinsicContentSize()
     }
-
 
     func link(at point: NSPoint) -> URL? {
         guard let layoutManager, let textContainer, let storage = textStorage, storage.length > 0 else { return nil }
@@ -527,14 +502,12 @@ final class CommitInfoDocumentView: NSView {
     override func otherMouseDown(with event: NSEvent) { owner?.otherMouseDown(button: event.buttonNumber) }
 }
 
-
 final class CommitInfoColorView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         NSColor.textBackgroundColor.blended(withFraction: 0.04, of: .black)?.setFill()
         dirtyRect.intersection(bounds).fill()
     }
 }
-
 
 @MainActor
 final class CommitNotesEditor: NSViewController {

@@ -102,7 +102,6 @@ final class FileViewerLineNumberRuler: NSRulerView {
     }
 }
 
-
 final class EditableFileTextView: NSView, NSTextViewDelegate {
     let textView = EditorTextView(frame: .zero)
     private let scrollView = NSScrollView()
@@ -190,7 +189,6 @@ final class EditableFileTextView: NSView, NSTextViewDelegate {
         }
     }
 
-
     var text: String {
         get { textView.string }
         set {
@@ -200,14 +198,12 @@ final class EditableFileTextView: NSView, NSTextViewDelegate {
         }
     }
 
-
     func replaceAll(with value: String) {
         let range = NSRange(location: 0, length: (textView.string as NSString).length)
         guard textView.shouldChangeText(in: range, replacementString: value) else { return }
         textView.replaceCharacters(in: range, with: value)
         textView.didChangeText()
     }
-
 
     func goToLine(_ line: Int) {
         let string = textView.string as NSString
@@ -257,7 +253,6 @@ final class EditableFileTextView: NSView, NSTextViewDelegate {
         textView.needsDisplay = true
     }
 }
-
 
 class FileViewerTextView: NSTextView {
     var onReadOnlyFind: ((FileViewerShortcut) -> Void)?
@@ -402,7 +397,6 @@ final class EditorTextView: FileViewerTextView {
     }
 }
 
-
 final class RepositoryFileEditorWindow: NSWindow {
     var onSave: (() -> Void)?
     var onCommandReturn: (() -> Void)?
@@ -440,7 +434,6 @@ enum RepositoryFileEditorDialogs {
         _ = await alert.beginSheetModal(for: window)
     }
 
-
     @MainActor static func yesNoCancel(_ text: String, caption: String, window: NSWindow) async -> Answer {
         let alert = NSAlert()
         alert.alertStyle = .informational
@@ -455,7 +448,6 @@ enum RepositoryFileEditorDialogs {
         default: return .cancel
         }
     }
-
 
     @MainActor static func okCancel(_ text: String, caption: String, window: NSWindow) async -> Bool {
         let alert = NSAlert()
@@ -497,7 +489,6 @@ enum RepositoryFileEditorDialogs {
     }
 }
 
-
 @MainActor
 final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDelegate {
     enum Kind: Equatable {
@@ -528,7 +519,6 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
         static let noWorkingDirectoryCaption = "No working directory"
         static let saveQuestionCaption = "Save changes?"
 
-
         var help: String {
             switch self {
             case .gitIgnore, .localExclude:
@@ -541,14 +531,12 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
         }
     }
 
-
-    static let defaultIgnorePatterns = [
+    nonisolated static let defaultIgnorePatterns = [
         "#Ignore thumbnails created by Windows", "Thumbs.db", "#Ignore files built by Visual Studio",
         "*.obj", "*.exe", "*.pdb", "*.user", "*.aps", "*.pch", "*.vspscc", "*_i.c", "*_p.c", "*.ncb", "*.suo",
         "*.tlb", "*.tlh", "*.bak", "*.cache", "*.ilk", "*.log", "[Bb]in", "[Dd]ebug*/", "*.lib", "*.sbr", "obj/",
         "[Rr]elease*/", "_ReSharper*/", "[Tt]est[Rr]esult*", ".vs/", ".idea/", "#Nuget packages folder", "packages/"
     ]
-
 
     static var defaultIgnorePatternsFile: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -597,7 +585,6 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
     }
 
     required init?(coder: NSCoder) { nil }
-
 
     func load() async {
         do {
@@ -734,9 +721,6 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
         return root
     }
 
-
-
-
     func saveAndClose() {
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -745,9 +729,7 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
         }
     }
 
-
     func cancel() { window?.performClose(nil) }
-
 
     func save() async -> Bool {
         if kind.isIgnore && !hasUnsavedChanges { return false }
@@ -764,7 +746,6 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
         }
     }
 
-
     func addDefaultIgnores() {
         let defaults = (try? String(contentsOf: Self.defaultIgnorePatternsFile, encoding: .utf8))
             .map { $0.components(separatedBy: .newlines).dropLastEmpty() } ?? Self.defaultIgnorePatterns
@@ -775,7 +756,6 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
         editor.replaceAll(with: current + "\n" + toAdd.joined(separator: "\n") + "\n")
     }
 
-
     func addPatternClicked() {
         Task { @MainActor [weak self] in
             guard let self, let window else { return }
@@ -784,9 +764,6 @@ final class RepositoryFileEditorWindowController: NSWindowController, NSWindowDe
             await load()
         }
     }
-
-
-
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if closing || !hasUnsavedChanges { return true }
@@ -813,7 +790,6 @@ private extension Array where Element == String {
 
     func dropLastEmpty() -> [String] { last == "" ? Array(dropLast()) : self }
 }
-
 
 @MainActor
 final class FileEditorWindowController: NSWindowController, NSWindowDelegate {
@@ -857,7 +833,6 @@ final class FileEditorWindowController: NSWindowController, NSWindowDelegate {
     }
 
     required init?(coder: NSCoder) { nil }
-
 
     func load() async throws {
         editor.syntaxPath = fileURL.path
@@ -938,7 +913,6 @@ final class FileEditorWindowController: NSWindowController, NSWindowDelegate {
 
     @objc private func saveClicked() { saveShowingError() }
 
-
     func saveShowingError() {
         do { try saveChanges() } catch {
             guard let window else { return }
@@ -946,13 +920,11 @@ final class FileEditorWindowController: NSWindowController, NSWindowDelegate {
         }
     }
 
-
     func saveChanges() throws {
         let encoding = loaded?.encoding ?? .utf8
         try EditableFileIO.saveInPlace(editor.text, to: fileURL, encoding: encoding, preamble: loaded?.preamble ?? [])
         hasChanges = false
     }
-
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if closing || !hasChanges { return true }
@@ -976,7 +948,6 @@ final class FileEditorWindowController: NSWindowController, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) { previewPresentation.cancel(); onClose() }
 }
-
 
 @MainActor
 final class AddToGitIgnoreWindowController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate {
@@ -1008,7 +979,6 @@ final class AddToGitIgnoreWindowController: NSWindowController, NSTableViewDataS
     }
 
     required init?(coder: NSCoder) { nil }
-
 
     func run(parent: NSWindow) async {
         guard let window else { return }
@@ -1103,11 +1073,9 @@ final class AddToGitIgnoreWindowController: NSWindowController, NSTableViewDataS
         return root
     }
 
-
     var currentPatterns: [String] {
         patternView.text.components(separatedBy: .newlines).filter { !$0.isEmpty }
     }
-
 
     private func patternsChanged() {
         loadTask?.cancel()
@@ -1128,7 +1096,6 @@ final class AddToGitIgnoreWindowController: NSWindowController, NSTableViewDataS
         }
     }
 
-
     private func updatePreview(_ files: [String]) {
         previewItems = files
         preview.reloadData()
@@ -1137,7 +1104,6 @@ final class AddToGitIgnoreWindowController: NSWindowController, NSTableViewDataS
         preview.isEnabled = true
         noMatchPanel.isHidden = !files.isEmpty
     }
-
 
     func ignoreClicked() {
         let patterns = currentPatterns

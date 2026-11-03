@@ -656,7 +656,6 @@ private final class CheckoutRevisionViewController: BranchFormViewController<Rep
         validation.stringValue = ""
     }
 
-
 }
 
 @MainActor

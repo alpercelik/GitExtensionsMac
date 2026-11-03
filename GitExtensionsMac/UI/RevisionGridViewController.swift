@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 @MainActor
 enum RevisionGridMessages {
     static var present: (_ message: String, _ caption: String) -> Void = { message, caption in
@@ -28,7 +27,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
     }
     private var selectionOrder: [RevisionID] = []
     var onSelection: ((Commit) -> Void)?
-
 
     var specializedContextMenu: ((NSMenu, [Commit]) -> Void)?
     var onViewSelected: (([Commit]) -> Void)?
@@ -234,7 +232,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         applyFilters(selectFirst: true)
     }
 
-
     private(set) var userSelectedDuringLoad = false
 
     func beginIncrementalLoad(preferredCommitID: RevisionID? = nil) {
@@ -257,7 +254,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         buildStatuses = [:]
         tableView.reloadData()
     }
-
 
     func applyColumnSettings() {
         let preferences = AppSettingsStore.shared.revisionGridPreferences
@@ -341,7 +337,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         isBisecting = inProgress
     }
 
-
     var currentFilter: RevisionGridFilter {
         let store = AppSettingsStore.shared
         var filter = sessionFilter
@@ -356,7 +351,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         filter.showSimplifyMerges = preferences.simplifyMergesInFileHistory
         return filter
     }
-
 
     func updateFilter(refresh: Bool = true, _ change: (inout RevisionGridFilter) -> Void) {
         var filter = currentFilter
@@ -380,8 +374,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         onFilterChanged?(currentFilter)
         onRefreshRequested?()
     }
-
-
 
     func showAllBranches() {
         guard !currentFilter.isShowAllBranchesChecked else { return }
@@ -413,7 +405,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
     }
     func resetAllFiltersAndRefresh() { updateFilter { $0.resetAllFilters() } }
 
-
     var readOptions: RevisionReadOptions {
         let store = AppSettingsStore.shared
         let preferences = store.revisionGridPreferences
@@ -441,7 +432,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
             if allCommits.contains(where: { $0.id == id }) { pendingSelectionID = id }
             return
         }
-
 
         pendingSelectionID = graphReloadPending ? id : nil
         tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
@@ -604,8 +594,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
     }
 
-
-
     private func prepareVisibleGraphRows() {
         guard !graphReloadPending, !commits.isEmpty else { return }
         let visible = tableView.rows(in: tableView.visibleRect)
@@ -628,7 +616,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         let input = allCommits
         let configuration = graphLayoutConfiguration
         let completed = historyCompleted
-
 
         graphTask?.cancel()
         graphTask = Task { @MainActor [weak self] in
@@ -820,7 +807,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         return cell
     }
 
-
     static func commitIDMaximumWidth() -> CGFloat {
         let font = AppSettingsStore.shared.fontPreferences.font(.monospace, fallback: .monospacedSystemFont(ofSize: 10.5, weight: .regular))
         return ceil((String(repeating: "1", count: 40) as NSString).size(withAttributes: [.font: font]).width) + 8
@@ -867,7 +853,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         let selected = selectedRevisionIDs
         if graphReloadPending, !selected.isEmpty {
 
-
             pendingOpeningSelection = selected
         }
         selectionOrder.removeAll { !selected.contains($0) }
@@ -887,7 +872,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         guard tableView.selectedRow >= 0, tableView.selectedRow < commits.count else { return }
         onSelection?(commits[tableView.selectedRow])
     }
-
 
     @objc private func openSelectedCommit() {
         if let event = NSApp.currentEvent, tableView.handleDoubleClickLabel?(event) == true { return }
@@ -1088,7 +1072,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         populateMenu(menu, row: row)
     }
 
-
     var menuState: RevisionGridMenuModel.State {
         let store = AppSettingsStore.shared
         var state = RevisionGridMenuModel.State()
@@ -1130,7 +1113,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
             return performGridCommand(command)
         }
     }
-
 
     @discardableResult
     func performGridCommand(_ id: String) -> Bool {
@@ -1268,7 +1250,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         allCommits.lazy.flatMap(\.references).first(where: { $0.kind == .currentBranch })?.name
     }
 
-
     private func routeMenuItems(in menu: NSMenu) {
         for item in menu.items {
             if let submenu = item.submenu { routeMenuItems(in: submenu); continue }
@@ -1304,7 +1285,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
     }
 
-
     func copyToClipboard(_ id: String) {
         let selected = selectedCommits
         let valuePrefix = "revision.copy.value."
@@ -1337,7 +1317,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         return latestSelected
     }
 
-
     func deleteRef() {
         guard let revision = latestSelected else { return }
         let current = currentBranchName
@@ -1349,7 +1328,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
     }
 
-
     func renameRef() {
         guard let revision = latestSelected else { return }
         let refs = revision.references.filter { $0.kind == .localBranch || $0.kind == .currentBranch }
@@ -1357,7 +1335,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
             self?.performCommand("revision.branch.rename.ref." + reference.id, focusedCommitID: revision.id)
         }
     }
-
 
     var quickSelectorAnchor: NSPoint? {
         guard let window = view.window else { return nil }
@@ -1375,7 +1352,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         if let index = chooser.run(owner: view.window, anchor: quickSelectorAnchor), chooser.accepted { perform(refs[index]) }
     }
 
-
     func diffSelectedCommitsWithDifftool() {
         let selected = selectedRevisionIDsBySelectionOrder.compactMap { id in commits.first { $0.id == id } }
         guard let latest = selected.first ?? latestSelected, let dataSource else { return }
@@ -1387,12 +1363,9 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
     }
 
-
-
     private var loadingSpinner: NSProgressIndicator?
     private var loadingLabel: NSTextField?
     private var pageView: NSView?
-
 
     func showLoading(spinner: Bool) {
         setPage(nil)
@@ -1425,7 +1398,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
 
     var isShowingLoading: Bool { loadingSpinner?.isHidden == false || loadingLabel?.isHidden == false }
 
-
     func finishLoading(failed: Bool = false, isBareRepository: Bool = false) {
         historyCompleted = true
         if !failed && !allCommits.isEmpty { applyFilters(selectFirst: true, preservingViewport: !selectedCommits.isEmpty) }
@@ -1449,7 +1421,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         (view as? RevisionGridScrollView)?.page = page
         guard let page else { return }
 
-
         page.translatesAutoresizingMaskIntoConstraints = true
         page.frame = view.bounds
         page.wantsLayer = true
@@ -1467,7 +1438,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
                                      image.centerYAnchor.constraint(equalTo: container.centerYAnchor)])
         return container
     }
-
 
     private func emptyRepositoryPage(isBare: Bool) -> NSView {
         let container = RevisionGridPageView()
@@ -1503,10 +1473,7 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
 
     var onEmptyRepositoryEditGitIgnore: (() -> Void)?
 
-
-
     private var messageColumnIndex: Int { tableView.column(withIdentifier: NSUserInterfaceItemIdentifier("Message")) }
-
 
     private func labelHit(row: Int, column: Int, event: NSEvent? = NSApp.currentEvent) -> RevisionLabelHit? {
         guard row >= 0, column == messageColumnIndex, let event,
@@ -1514,7 +1481,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         else { return nil }
         return cell.label(atWindowPoint: event.locationInWindow)
     }
-
 
     private func goToRelatedRef(_ hit: RevisionLabelHit, handleGone: Bool, toggle: Bool = false) {
         let target: String
@@ -1534,7 +1500,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         goToRef(target, showNoRevisionMessage: true, toggle: toggle)
     }
 
-
     func goToRef(_ name: String, showNoRevisionMessage: Bool, toggle: Bool = false) {
         guard !name.isEmpty, let dataSource else { return }
         Task { @MainActor [weak self] in
@@ -1548,7 +1513,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
             }
         }
     }
-
 
     fileprivate func handleAddRelatedRefClick(_ event: NSEvent) -> Bool {
         let point = tableView.convert(event.locationInWindow, from: nil)
@@ -1572,7 +1536,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         goToRelatedRef(hit, handleGone: true)
         return true
     }
-
 
     func dropPatchFiles(_ urls: [URL]) -> Bool {
         guard urls.contains(where: { $0.pathExtension.lowercased() == "patch" }) else { return false }
@@ -1602,9 +1565,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
     }
 
-
-
-
     var dataSource: (any RepositoryRevisionGridDataSource)?
 
     var referenceNames: () -> (branches: [String], tags: [String]) = { ([], []) }
@@ -1619,7 +1579,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
     }
 
     var selectedCommits: [Commit] { tableView.selectedRowIndexes.compactMap { commits.indices.contains($0) ? commits[$0] : nil } }
-
 
     @discardableResult
     func setSelectedRevision(_ id: RevisionID, toggle: Bool = false, updateHistory: Bool = true) -> Bool {
@@ -1661,9 +1620,7 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
 
     func resetNavigationHistory() { navigationBackward.removeAll(); navigationForwardItems.removeAll(); onMenuStateChanged?() }
 
-
     func goToRevision(_ id: RevisionID) { select(id) }
-
 
     private func select(_ id: RevisionID, updateHistory: Bool = true, toggle: Bool = false) {
         guard !setSelectedRevision(id, toggle: toggle, updateHistory: updateHistory) else { return }
@@ -1724,7 +1681,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
     }
 
-
     func goToCommit() {
         guard let window = view.window else { return }
         let names = referenceNames()
@@ -1744,7 +1700,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
             }
         }
     }
-
 
     func toggleBetweenArtificialAndHeadCommits() {
         func next(_ id: RevisionID?) -> RevisionID? {
@@ -1771,7 +1726,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         if let head = headObjectID { setSelectedRevision(.object(head)) }
     }
 
-
     func selectNextForkPointAsDiffBase() {
         let selected = selectedCommits
         guard var revision = selected.last else { return }
@@ -1787,7 +1741,6 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
     }
 
 }
-
 
 final class RevisionAvatarCellView: NSTableCellView {
     private let avatar = AuthorAvatarView()
@@ -1810,7 +1763,6 @@ final class RevisionAvatarCellView: NSTableCellView {
         toolTip = nil
     }
 }
-
 
 private final class RevisionGridScrollView: NSScrollView {
     weak var page: NSView?
@@ -1849,14 +1801,9 @@ final class RevisionTableView: NSTableView {
     var navigateHistory: ((Bool) -> Void)?
     var dropPatchFiles: (([URL]) -> Bool)?
 
-
     override func selectAll(_ sender: Any?) {}
 
-
     private(set) var isReloadingContent = false
-
-
-
 
     override func reloadData() {
         let selected = selectedRowIndexes
@@ -1936,7 +1883,6 @@ final class RevisionTableView: NSTableView {
         super.mouseDown(with: event)
         if event.modifierFlags.contains(.option) { highlightSelectedBranch?() }
     }
-
 
     override func otherMouseDown(with event: NSEvent) {
         switch event.buttonNumber {
@@ -2068,7 +2014,6 @@ final class CommitGraphCellView: NSTableCellView {
         for edge in orderedEdges {
             draw(edge: edge, originX: originX, centerY: centerY)
         }
-
 
         guard graphRow.nodeLane < RevisionGraphLayout.maximumVisibleLanes else { return }
         let nodeX = laneX(graphRow.nodeLane, originX: originX)
@@ -2288,7 +2233,6 @@ final class CommitGraphCellView: NSTableCellView {
     }
 }
 
-
 struct RevisionLabelContext {
     var aheadBehindByLocal: [String: AheadBehindData] = [:] {
         didSet { aheadBehindByRemote = Dictionary(aheadBehindByLocal.values.map { ($0.remoteRef, $0) }, uniquingKeysWith: { first, _ in first }) }
@@ -2300,7 +2244,6 @@ struct RevisionLabelContext {
     var remotePrefixes: [String: String] = [:]
     var showAnnotatedTagsMessages = true
 
-
     func aheadBehind(_ reference: RevisionReference) -> AheadBehindData? {
         switch reference.kind {
         case .remoteBranch: aheadBehindByRemote[reference.id]
@@ -2309,7 +2252,6 @@ struct RevisionLabelContext {
         }
     }
 }
-
 
 struct RevisionLabelHit: Equatable {
     var reference: RevisionReference
@@ -2389,7 +2331,6 @@ final class RevisionMessageCellView: NSTableCellView {
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet { needsDisplay = true }
     }
-
 
     func label(atWindowPoint point: NSPoint) -> RevisionLabelHit? {
         if badges.isEmpty, commit != nil { badges = layoutBadges(for: commit!) }
@@ -2530,8 +2471,6 @@ final class RevisionMessageCellView: NSTableCellView {
         needsDisplay = true
     }
 
-
-
     private func layoutBadges(for commit: Commit) -> [Badge] {
         var result: [Badge] = []
         var offset: CGFloat = 6
@@ -2612,7 +2551,6 @@ final class RevisionMessageCellView: NSTableCellView {
                              shape: reference.kind == .tag ? .pointLeft : .rect, offset: offset, remote: reference.remoteName, dashed: dashed))
         }
 
-
         for (index, reference) in superprojectRefs.prefix(SuperprojectInfo.maxRefs).enumerated() {
             append(makeBadge(hit: nil, name: index < SuperprojectInfo.maxRefs - 1 ? reference.name : "…", kind: reference.kind,
                              shape: .rect, offset: offset, dashed: true))
@@ -2626,7 +2564,6 @@ final class RevisionMessageCellView: NSTableCellView {
         }
         return result
     }
-
 
     private func appendNested(_ reference: RevisionReference, dashed: Bool, nestled: RevisionReference, nestledName: String,
                               nestledHit: RevisionLabelHit, nestledDashed: Bool, into result: inout [Badge], offset: inout CGFloat) {
@@ -2801,7 +2738,6 @@ final class RevisionMessageCellView: NSTableCellView {
     private static var cachedGraph: [NSColor] = []
     static var graph: [NSColor] {
         if graphGeneration == ApplicationColors.generation { return cachedGraph }
-
 
         var colors: [NSColor] = []
         for color in defaultGraph.enumerated().map({ index, color in ApplicationColors.color("GraphBranch\(index + 1)", fallback: color) })

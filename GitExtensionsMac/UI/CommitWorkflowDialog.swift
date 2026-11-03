@@ -420,7 +420,7 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
             self?.applySelectedLines(lineIDs: lineIDs, direction: direction)
         }
         commitDiffView.onResetLines = { [weak self] ids, direction in self?.resetSelectedLines(lineIDs: ids, direction: direction) }
-        commitDiffView.difftasticAvailability = { [source] in await (source as? any RepositoryBrowsingDataSource)?.isDifftasticEnabled() ?? false }
+        commitDiffView.difftasticAvailability = { [source] in await source.isDifftasticEnabled() }
         commitDiffView.onAddSelectedText = { [weak self] text in
             self?.addSelectedDiffTextToMessage(text)
         }
@@ -1770,7 +1770,6 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
         view.window?.makeFirstResponder(unstagedTable.selectedRow >= 0 ? unstagedFilter : stagedFilter)
     }
 
-
     @objc private func editIgnoredFiles(_ sender: NSMenuItem) {
         guard let window = view.window else { return }
         onEditIgnoredFiles?(sender.tag == 1, window) { [weak self] in self?.reloadChanges(preserveMessage: true) }
@@ -2132,8 +2131,8 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
         diffLoadTask = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                if CommitFileContentPresentation.viewsAsFileContent(file, headless: headless), let browsing = source as? any RepositoryBrowsingDataSource,
-                   let preview = try await fileContentPreview(file: file, commit: commit, source: browsing) {
+                if CommitFileContentPresentation.viewsAsFileContent(file, headless: headless),
+                   let preview = try await fileContentPreview(file: file, commit: commit, source: source) {
                     guard !Task.isCancelled else { return }
                     commitDiffView.apply(file: file, preview: preview, direction: table === unstagedTable ? .stage : .unstage)
                     return
@@ -2463,7 +2462,7 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
                 let hooks = scriptHooks
                 let scriptContext = scriptFileContext
                 let result = try await OutputHistoryRecording.perform {
-                    try await source.commit(request, beforeExecution: {
+                    try await self.source.commit(request, beforeExecution: {
                         guard await hooks?.runWithOptions(.beforeCommit, options: scriptContext) != false else { throw CancellationError() }
                     })
                 }

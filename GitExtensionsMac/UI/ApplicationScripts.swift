@@ -99,7 +99,7 @@ final class ScriptProcessWindow: NSWindowController, NSWindowDelegate {
         }
         controller.showWindow(nil)
         let processInput = controller.processInput
-        let task = Task {
+        let task = Task { [controller] in
             try await OutputHistoryRecording.perform {
                 try await processInput.perform {
                     try await operation { [weak controller] event in
@@ -262,9 +262,10 @@ final class ScriptsWindowController: NSWindowController, NSTableViewDataSource, 
     private var running = false
     private var argumentsHelp: ScriptArgumentsHelpWindow?
 
-    init(store: ApplicationScriptsStore = .shared,
+    init(store: ApplicationScriptsStore? = nil,
          execute: @escaping (ScriptDefinition, @escaping (Result<ScriptExecutionOutcome, Error>) -> Void) -> Void,
          cancel: @escaping () -> Void, canExecute: Bool = true) throws {
+        let store = store ?? .shared
         self.store = store; scripts = try store.load(); self.execute = execute; cancelExecution = cancel
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 740, height: 530),
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
@@ -397,7 +398,6 @@ final class ScriptsWindowController: NSWindowController, NSTableViewDataSource, 
         argumentsHelp?.window?.makeKeyAndOrderFront(nil)
     }
 }
-
 
 enum ScriptArgumentsHelp {
     static let text = """

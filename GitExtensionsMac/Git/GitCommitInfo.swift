@@ -1,7 +1,6 @@
 import Foundation
 import GitExtensionsCore
 
-
 package protocol RepositoryCommitInfoDataSource: Sendable {
 
     func loadCommitMessageAndNotes(_ id: ObjectID) async throws -> RepositoryCommitMessage
@@ -96,7 +95,6 @@ package enum CommitInfoCommands {
         GitCommand(arguments: ["notes", "remove", "--ignore-missing", id.string], accessesRemote: false, changesRepositoryState: true)
     }
 
-
     package static func parseMessageAndNotes(_ output: String) -> RepositoryCommitMessage {
         let text = output.replacingOccurrences(of: "\u{0b}", with: "\n")
         guard let range = text.range(of: messageSeparator, options: .backwards) else {
@@ -107,7 +105,6 @@ package enum CommitInfoCommands {
         while notes.hasSuffix("\n") || notes.hasSuffix("\r") { notes.removeLast() }
         return RepositoryCommitMessage(body: String(text[..<range.lowerBound]).trimmingTrailingWhitespace(), notes: notes)
     }
-
 
     package static func parseContainingBranches(_ output: String, remote: Bool) -> [String] {
         output.split(whereSeparator: { $0 == "\n" || $0 == "\r" }).map { line in
@@ -120,13 +117,11 @@ package enum CommitInfoCommands {
         }
     }
 
-
     package static func parseTagMessage(_ output: String) -> String? {
         let lines = output.components(separatedBy: "\n").map { $0.hasSuffix("\r") ? String($0.dropLast()) : $0 }
         guard lines.count > 5 else { return nil }
         return lines[5...].joined(separator: "\n").trimmingTrailingWhitespace()
     }
-
 
     package static func parseDescribe(_ output: String?, id: ObjectID) -> RepositoryCommitDescription {
         guard var description = output?.trimmingTrailingWhitespace(), !description.isEmpty else {
@@ -144,7 +139,6 @@ package enum CommitInfoCommands {
         return RepositoryCommitDescription(precedingTag: String(description[..<countRange.lowerBound]),
                                            commitCount: String(description[countRange.upperBound...]))
     }
-
 
     package static func parseTagOrder(_ output: String) throws -> [String: Int] {
         if let warning = output.range(of: "warning:") {

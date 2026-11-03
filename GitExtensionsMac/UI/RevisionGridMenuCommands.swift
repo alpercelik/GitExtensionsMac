@@ -2,8 +2,6 @@ import AppKit
 import GitCommands
 import GitExtensionsCore
 
-
-
 struct RevisionGridMenuCommand: Equatable, Sendable {
     enum Kind: Equatable, Sendable { case command, header, separator }
     var kind: Kind = .command
@@ -96,7 +94,6 @@ enum RevisionGridMenuModel {
                 .init(id: "revision.view.saveDefaults", title: "Save current view settings as default")]
     }
 
-
     static let images: [String: String] = [
         "revision.navigate.toggleArtificial": "WorkingDirChanges", "revision.navigate.current": "GotoCurrentRevision",
         "revision.navigate.commit": "GotoCommit", "revision.navigate.child": "GoToChildCommit",
@@ -106,7 +103,6 @@ enum RevisionGridMenuModel {
         "revision.branches.all": "BranchLocal", "revision.branches.current": "BranchFilter",
         "revision.branches.filtered": "BranchFilter", "revision.other.reflog": "Book", "revision.filter.advanced": "EditFilter"
     ]
-
 
     @MainActor static func fill(_ menu: NSMenu, _ commands: [RevisionGridMenuCommand], target: AnyObject, action: Selector) {
         menu.autoenablesItems = false

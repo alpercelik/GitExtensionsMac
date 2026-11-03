@@ -12,7 +12,6 @@ package enum RevisionComparisonError: LocalizedError {
     }
 }
 
-
 package struct RevisionComparisonReadRequest: Sendable {
     package let context: RevisionReadContext
     package let reader: RevisionReader
@@ -32,7 +31,6 @@ package protocol RepositoryRevisionComparingDataSource: Sendable {
     func comparisonMergeBase(first: RevisionID, second: RevisionID, headID: ObjectID?) async throws -> ObjectID?
     func comparisonCount(from: RevisionID, to expression: String, headID: ObjectID?) async throws -> String
 }
-
 
 package enum RevisionComparison {
     package static func firstID(in selected: [Commit]) -> RevisionID? {

@@ -91,7 +91,6 @@ struct RevisionContextMenuContext: Sendable {
     var gridMenuState = RevisionGridMenuModel.State()
 }
 
-
 enum RevisionContextMenuBuilder {
     static func build(_ context: RevisionContextMenuContext) -> [ContextMenuEntry] {
         let revision = context.focusedCommit
@@ -240,7 +239,6 @@ enum RevisionContextMenuBuilder {
         return entries.normalizedMenuSeparators()
     }
 
-
     static func copyMenu(_ selected: [Commit], filter: RevisionReference? = nil) -> ContextMenuEntry {
         let refs = selected.flatMap(\.references).filter { filter == nil || $0.id == filter?.id }
         let branchNames = refs.filter { [.currentBranch, .localBranch, .remoteBranch].contains($0.kind) }.map(\.name)
@@ -277,7 +275,6 @@ enum RevisionContextMenuBuilder {
         return submenu("revision.copy", "Copy to clipboard", children: children, enabled: true)
     }
 
-
     static func copyValues(_ selected: [Commit], _ extract: (Commit) -> String) -> [String] {
         var seen = Set<String>()
         return selected.map(extract).filter { seen.insert($0).inserted }
@@ -294,7 +291,6 @@ enum RevisionContextMenuBuilder {
         formatter.timeStyle = .medium
         return formatter.string(from: date)
     }
-
 
     private static func compareMenu(_ context: RevisionContextMenuContext, selected: [Commit]) -> ContextMenuEntry {
         let latest = selected.first ?? context.focusedCommit
@@ -407,7 +403,6 @@ enum RepositoryMenuNodeKind: Hashable, Sendable {
         }
     }
 
-
     var supportsCopy: Bool {
         switch self {
         case .localBranch, .remoteBranch, .stash: true
@@ -491,7 +486,6 @@ enum RepositoryContextMenuBuilder {
                 ]))
             }
         }
-
 
         if isSingle, case .localBranch = context.focused, context.focusedRevisionVisible {
             let hosted = context.scripts.filter { !$0.direct }
@@ -646,7 +640,6 @@ enum ChangedFileSelectionScope: Hashable, Sendable {
     case index
 }
 
-
 struct ChangedFileContextMenuContext: Sendable {
 
     let selectedFiles: [ChangedFile]
@@ -697,7 +690,6 @@ struct ChangedFileContextMenuContext: Sendable {
         self.secondRevisions = secondRevisions
     }
 
-
     var selectedRevision: RevisionID? {
         let distinct = Set(secondRevisions)
         return distinct.count == 1 ? distinct.first : nil
@@ -714,7 +706,6 @@ struct ChangedFileContextMenuContext: Sendable {
     var isDeleted: Bool { selectedFiles.contains { $0.changeType == .deleted } }
     var isAnySubmodule: Bool { selectedFiles.contains { $0.isSubmodule } }
 }
-
 
 enum ChangedFileContextMenuBuilder {
 
@@ -745,7 +736,6 @@ enum ChangedFileContextMenuBuilder {
     static func showFileHistory(_ c: ChangedFileContextMenuContext) -> Bool {
         (c.count == 1 || !(c.selectedFolder ?? "").isEmpty) && c.isAnyTracked
     }
-
 
     static func canResetToSecond(_ c: ChangedFileContextMenuContext) -> Bool { c.secondRevisions.first?.objectID != nil }
     static func canResetToFirst(_ c: ChangedFileContextMenuContext) -> Bool {
@@ -789,7 +779,6 @@ enum ChangedFileContextMenuBuilder {
         }
         if c.canCherryPick && showCherryPick(c) { entries.append(command("file.cherryPick", "Cherry pick changes")) }
         entries.append(.separator)
-
 
         var difftool: [ContextMenuEntry] = []
         if !c.secondRevisions.isEmpty {
@@ -857,7 +846,6 @@ enum ChangedFileContextMenuBuilder {
         }
         return entries.normalizedMenuSeparators()
     }
-
 
     private static func toolEntry(_ id: String, _ title: String, tools: [String], enabled: Bool) -> ContextMenuEntry {
         guard !tools.isEmpty else { return command(id, title, enabled: enabled) }

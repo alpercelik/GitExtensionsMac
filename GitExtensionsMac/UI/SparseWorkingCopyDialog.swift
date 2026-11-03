@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 @MainActor
 final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDelegate {
     enum Strings {
@@ -41,7 +40,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
     private var enabledViews: [NSView] = []
     private var closing = false
 
-
     private(set) var isSparseCheckoutEnabled = false { didSet { updateVisibility() } }
     private(set) var isSparseCheckoutEnabledAsSaved = false
 
@@ -78,7 +76,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
 
     required init?(coder: NSCoder) { nil }
 
-
     func load() async {
         isSparseCheckoutEnabled = (try? await source.isSparseCheckoutEnabled()) ?? false
         isSparseCheckoutEnabledAsSaved = isSparseCheckoutEnabled
@@ -102,8 +99,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
     func setRulesText(_ text: String) { rulesText = text }
     func setSparseCheckoutEnabled(_ enabled: Bool) { isSparseCheckoutEnabled = enabled }
 
-
-
     private func makeContent() -> NSView {
         let root = NSView()
         let header = NSStackView()
@@ -120,7 +115,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
         header.addArrangedSubview(detailsRow)
         let headerBox = Self.backgroundBox(header, color: .textBackgroundColor)
 
-
         let notEnabled = NSTextField(wrappingLabelWithString: Strings.notEnabled)
         notEnabled.textColor = ApplicationColors.color("InfoText", fallback: .black)
         let enableButton = Self.button(Strings.enable) { [weak self] in self?.setSparseCheckoutEnabled(true) }
@@ -133,7 +127,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
 
         disabledPanel.appearance = NSAppearance(named: .aqua)
         let disabledSeparator = Self.separator()
-
 
         let enabledLabel = NSTextField(labelWithString: Strings.isEnabled + " ")
         let disableLink = Self.button(Strings.disable) { [weak self] in self?.setSparseCheckoutEnabled(false) }
@@ -148,7 +141,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
         enabledRow.toolTip = Strings.disableHint
         disableLink.toolTip = Strings.disableHint
 
-
         let line1 = NSTextField(wrappingLabelWithString: Strings.rulesLine1)
         let line1Row = NSStackView(views: [line1])
         line1Row.edgeInsets = NSEdgeInsets(top: 5, left: 10, bottom: 0, right: 10)
@@ -159,7 +151,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
         let rulesSeparator = Self.separator()
         editor.toolTip = Strings.editorHint
         editor.textView.toolTip = Strings.editorHint
-
 
         refreshCheckbox.toolTip = Strings.refreshHint
         let save = Self.button("Save") { [weak self] in self?.saveAndClose() }
@@ -205,7 +196,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
 
     private var fillerView: NSView?
 
-
     private func updateVisibility() {
         disabledViews.forEach { $0.isHidden = isSparseCheckoutEnabled }
         enabledViews.forEach { $0.isHidden = !isSparseCheckoutEnabled }
@@ -246,9 +236,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
         return button
     }
 
-
-
-
     func saveAndClose() {
         Task { @MainActor [weak self] in
             guard let self, let window else { return }
@@ -258,7 +245,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
         }
     }
 
-
     func cancel() { window?.performClose(nil) }
 
     private func saveReportingErrors(window: NSWindow) async {
@@ -267,7 +253,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
                                                       caption: "\(Strings.title) – Save File", window: window)
         }
     }
-
 
     func saveChanges(window: NSWindow) async throws {
         if !isSparseCheckoutEnabled, isSparseCheckoutEnabledAsSaved, let rules = rulesText,
@@ -308,8 +293,6 @@ final class SparseWorkingCopyWindowController: NSWindowController, NSWindowDeleg
         }
         onSaved()
     }
-
-
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if closing || !hasUnsavedChanges { return true }

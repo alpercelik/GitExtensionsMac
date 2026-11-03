@@ -600,4 +600,3 @@ final class CommitAuthorStatusButton: NSButton {
         attributedTitle = NSAttributedString(string: text, attributes: attributes)
     }
 }
-

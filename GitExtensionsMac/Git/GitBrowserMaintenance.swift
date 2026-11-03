@@ -1,7 +1,6 @@
 import Foundation
 import GitExtensionsCore
 
-
 package protocol RepositoryBrowserMaintenanceDataSource: Sendable {
 
     func compressGitDatabase(output: @escaping GitOutputHandler) async throws -> GitCommandResult

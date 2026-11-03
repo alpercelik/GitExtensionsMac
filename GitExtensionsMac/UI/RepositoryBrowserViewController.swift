@@ -76,8 +76,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     private let buildServerWatcher = BuildServerWatcher()
     private var buildServerLaunchTask: Task<Void, Never>?
 
-
-
     private let mainSplitController = RetainingSplitViewController(resizeBehavior: .fixedLeadingPane)
     private let rightSplitController = RetainingSplitViewController(resizeBehavior: .proportional)
     private let revisionsSplitController = RetainingSplitViewController(resizeBehavior: .fixedTrailingPane)
@@ -178,6 +176,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     private weak var configuredWindow: NSWindow?
     private var didSetInitialDividerPositions = false
     private var repositoryStateLoadTask: Task<Void, Never>?
+    private var workingDirectoryStatusTask: Task<Void, Never>?
     private var activeRevisionReader: RevisionReader?
     private var revisionReadTask: Task<Void, Never>?
     private var labelContextTask: Task<Void, Never>?
@@ -209,12 +208,14 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     private var pullPreferencesObserver: NSObjectProtocol?
     private var repositoryChangeSubscription: RepositoryChangedSubscription?
     private var notifierPreferredCommitID: RevisionID?
+    private var pendingRepositoryReload = false
     var selectedCommitID: RevisionID?
     var commitDraft: CommitDialogDraft?
-    private let statusMonitor = RepositoryStatusMonitor()
+    let statusMonitor = RepositoryStatusMonitor()
     private let refreshButton = AppKitFactory.resourceButton("ReloadRevisions", tooltip: "Refresh", target: nil, action: nil)
     private var repositoryAheadBehind: [String: AheadBehindData] = [:]
     private var monitoredURLs: [URL] = []
+    private var revisionChangeURLs: [URL] = []
     private var browserCloseObserver: NSObjectProtocol?
     private var openingSelection: [RevisionID]
     private let fileHistory: FileHistoryBrowseRequest?
@@ -256,7 +257,15 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             fileTreeController.requestsBlameForFollowedFile = true
         }
         uiCommands = GitUICommands(repositoryModule: repositoryModule, browser: self)
-        statusMonitor.onRefresh = { [weak self] in self?.reloadRepositoryState(automatic: true) }
+        statusMonitor.onRefresh = { [weak self] in
+            guard let self else { return }
+            if self.pendingRepositoryReload {
+                self.pendingRepositoryReload = false
+                self.reloadRepositoryState(automatic: true)
+            } else {
+                self.refreshWorkingDirectoryStatus()
+            }
+        }
         statusMonitor.onStateChanged = { [weak self] in self?.updateRefreshIndicator() }
         statusMonitor.isPaused = { [weak self] in
             guard let self else { return true }
@@ -268,6 +277,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             self.notifierPreferredCommitID = nil
             if self.statusMonitor.isRunning {
                 self.notifierPreferredCommitID = preferredCommitID
+                self.pendingRepositoryReload = true
                 self.statusMonitor.changed(interactive: true)
             } else { self.reloadRepositoryState(preferredCommitID: preferredCommitID) }
         }
@@ -277,6 +287,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
 
     deinit {
         repositoryStateLoadTask?.cancel()
+        workingDirectoryStatusTask?.cancel()
         revisionReadTask?.cancel()
         revisionDetailsTask?.cancel()
         mutationTask?.cancel()
@@ -400,7 +411,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
 
     private func makeRebaseBanner() -> NSView {
         rebaseBanner.color = NSColor.systemBlue.withAlphaComponent(0.22)
-        let icon = NSImageView(image: NSImage(systemSymbolName: "info.circle.fill", accessibilityDescription: "Rebase in progress") ?? NSImage())
         rebaseBannerLabel.font = AppSettingsStore.shared.applicationFont(size: 12)
         gitActionAbortButton.target = self; gitActionAbortButton.action = #selector(abortGitActionFromBanner)
         gitActionMoreButton.target = self; gitActionMoreButton.action = #selector(showGitActionMore)
@@ -503,8 +513,11 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         super.viewDidAppear()
         if let identity = repositoryIdentity, !monitoredURLs.isEmpty {
             let wasRunning = statusMonitor.isRunning
-            statusMonitor.configure(repositoryID: identity.currentRepository.id, urls: monitoredURLs)
-            if !wasRunning { statusMonitor.changed(interactive: true) }
+            statusMonitor.configure(repositoryID: identity.currentRepository.id, urls: monitoredURLs, revisionURLs: revisionChangeURLs)
+            if !wasRunning {
+                pendingRepositoryReload = true
+                statusMonitor.changed(interactive: true)
+            }
         }
         updateWindowTitle()
         configureWindowSizing()
@@ -540,7 +553,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
         updateOutputPanelLayout()
     }
-
 
     private func configureDetailTabs(selecting controller: NSViewController? = nil) {
         let selected = controller ?? selectedDetailController ?? revisionDiffController
@@ -590,7 +602,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             let settings = (try? BuildServerSettingsStore(locations: locations).values(.effective)) ?? [:]
             let resolution = await BuildServerAdapterResolver.resolve(settings: settings, remotes: remotes, currentRemote: current,
                 credential: { url in await hosting?.hostCredentialPassword(for: url) },
-                isCommitVisible: { [weak self] id in await MainActor.run { self?.revisions.contains { $0.id == .object(id) } ?? false } })
+                isCommitVisible: { [weak self] id in await MainActor.run { [weak self] in self?.revisions.contains { $0.id == .object(id) } ?? false } })
             guard let self, !Task.isCancelled else { return }
             showBuildResultPage = BuildServerSettingsStore.bool(settings[BuildServerSettingKeys.showBuildResultPage]) ?? false
             revisionGridController.setBuildStatusColumn(enabled: resolution.adapter != nil || resolution.explicitlyEnabled)
@@ -690,7 +702,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         if !layout.showSplitViewLayout { rightSplitController.setCollapsed(true, for: detailsSplitItem) }
     }
 
-
     private func layoutRevisionInfo() {
         let selected = selectedDetailController
         revisionsSplitController.removeSplitViewItem(gridSplitItem)
@@ -720,7 +731,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         loadActiveDetailTab()
     }
 
-
     private func refreshLayoutToggleButtonStates() {
         toggleLeftPanelButton.state = mainSplitController.isCollapsed(leftSplitItem) ? .off : .on
         toggleSplitViewButton.state = layout.showSplitViewLayout ? .on : .off
@@ -731,7 +741,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         BrowserCommandAvailability.shared.layout = layout
     }
 
-
     var layoutSnapshot: (leftPanelCollapsed: Bool, detailsCollapsed: Bool, commitTabShown: Bool, commitInfoBesideGraph: Bool,
                          visibleToolbarItems: Set<String>) {
         (mainSplitController.isCollapsed(leftSplitItem), rightSplitController.isCollapsed(detailsSplitItem),
@@ -740,10 +749,14 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
          Set(toolbarItems.filter { item in !item.views.isEmpty && item.views.allSatisfy { !$0.isHidden } }.map(\.key)))
     }
 
+    private var unbornBranchName: String? {
+        guard let identity = repositoryIdentity, identity.headID == nil else { return nil }
+        return RepositoryHistory.symbolicBranchName(identity.currentRepository.path)
+    }
 
     private func updateWindowTitle() {
         guard let window = view.window else { return }
-        let branch = repositoryReferences?.branches.first(where: \.isCurrent)?.name
+        let branch = repositoryReferences?.branches.first(where: \.isCurrent)?.name ?? unbornBranchName
         let path = repositoryIdentity.map { URL(fileURLWithPath: $0.currentRepository.path, isDirectory: true) }
         window.title = BrowserPresentation.windowTitle(repositoryURL: path, branch: branch,
                                                        pathFilter: revisionGridController.currentFilter.effectivePathFilter)
@@ -788,8 +801,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         view.addSubview(outputHistoryController.view)
         updateOutputPanelLayout()
     }
-
-
 
     private func updateOutputPanelLayout() {
         guard isViewLoaded else { return }
@@ -915,7 +926,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             action: #selector(selectPullAction)
         )
         rebuildPullMenu()
-        for (key, title, imageName, command) in Self.pullShortcutButtons {
+        for (key, title, imageName, _) in Self.pullShortcutButtons {
             let button = AppKitFactory.resourceButton(imageName, tooltip: title, target: self, action: #selector(pullShortcutButton(_:)))
             button.identifier = NSUserInterfaceItemIdentifier(key)
             pullShortcutViews[key] = button
@@ -1178,7 +1189,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     }
 
     private func updateRefreshIndicator() {
-        let dirty = statusMonitor.state.isDirty && AppSettingsStore.shared.browseDisplayPreferences.showChangedFilesOnCommitButton
+        let dirty = statusMonitor.revisionsChanged && AppSettingsStore.shared.browseDisplayPreferences.showChangedFilesOnCommitButton
         refreshButton.image = AppKitFactory.resourceImage(dirty ? "ReloadRevisionsDirty" : "ReloadRevisions", accessibilityDescription: "Refresh")
         refreshButton.toolTip = dirty ? "Refresh — repository changed" : "Refresh"
     }
@@ -1187,6 +1198,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         super.viewDidDisappear()
         statusMonitor.stop()
         repositoryStateLoadTask?.cancel()
+        workingDirectoryStatusTask?.cancel()
         revisionReadTask?.cancel()
     }
 
@@ -1632,6 +1644,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         pushButton.toolTip = PushButtonPresentation(data: nil, enabled: false, shortcut: chord.key.isEmpty ? "" : chord.title).tooltip
 
         repositoryStateLoadTask?.cancel()
+        workingDirectoryStatusTask?.cancel()
         revisionDetailsTask?.cancel()
         statusLabel.stringValue = "Loading repository…"
         repositoryStateLoadTask = Task { @MainActor [weak self] in
@@ -1647,6 +1660,25 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
                 statusMonitor.finishRefresh(ticket, succeeded: false)
                 guard !Task.isCancelled else { return }
                 showRepositoryLoadError(error)
+            }
+        }
+    }
+
+    private func refreshWorkingDirectoryStatus() {
+        let ticket = statusMonitor.beginRefresh()
+        workingDirectoryStatusTask?.cancel()
+        workingDirectoryStatusTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let status = try await repositoryModule.loadWorkingDirectoryStatus()
+                try Task.checkCancellation()
+                repositoryStatus = status
+                revisionGridController.applyStatus(status)
+                updateToolbarRepositoryState()
+                statusMonitor.finishRefresh(ticket, succeeded: true)
+            } catch {
+                if error is DubiousRepositoryOwnership { statusMonitor.suspendAutomaticRefresh() }
+                statusMonitor.finishRefresh(ticket, succeeded: false)
             }
         }
     }
@@ -1708,7 +1740,8 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         repositoryStatus = state.status
         repositoryAheadBehind = state.aheadBehind
         monitoredURLs = state.monitoringURLs
-        if !monitoredURLs.isEmpty { statusMonitor.configure(repositoryID: state.identity.currentRepository.id, urls: monitoredURLs) }
+        revisionChangeURLs = state.revisionChangeURLs
+        if !monitoredURLs.isEmpty { statusMonitor.configure(repositoryID: state.identity.currentRepository.id, urls: monitoredURLs, revisionURLs: revisionChangeURLs) }
         if browserCloseObserver == nil {
             browserCloseObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { [weak self] notification in
                 MainActor.assumeIsolated {
@@ -1716,6 +1749,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
                     self.consoleController.stop()
                     self.statusMonitor.stop()
                     self.repositoryStateLoadTask?.cancel()
+                    self.workingDirectoryStatusTask?.cancel()
                     self.revisionReadTask?.cancel()
                 }
             }
@@ -1766,7 +1800,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         let branchState = state.references.branches.first(where: \.isCurrent).map { branch in
             let counts = AppSettingsStore.shared.browseDisplayPreferences.branchCounts(ahead: branch.ahead, behind: branch.behind)
             return "   \(branch.name)\(counts)"
-        } ?? "   Detached HEAD"
+        } ?? unbornBranchName.map { "   \($0)" } ?? "   Detached HEAD"
         repositoryStateLabel.stringValue = "\(revisionCount) revisions\(branchState)"
         updateWindowTitle()
         refreshOperationIndicators()
@@ -1779,6 +1813,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         previousRevisions: [Commit]? = nil,
         refreshTicket: RepositoryRefreshState.Ticket? = nil
     ) {
+        statusMonitor.revisionsRefreshed()
         revisionReadTask?.cancel()
         let oldRevisions = previousRevisions ?? revisions
         revisions = []
@@ -1858,7 +1893,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         let branchState = repositoryReferences.branches.first(where: \.isCurrent).map { branch in
             let counts = AppSettingsStore.shared.browseDisplayPreferences.branchCounts(ahead: branch.ahead, behind: branch.behind)
             return "   \(branch.name)\(counts)"
-        } ?? "   Detached HEAD"
+        } ?? unbornBranchName.map { "   \($0)" } ?? "   Detached HEAD"
         repositoryStateLabel.stringValue = "\(revisionCount) revisions\(branchState)"
     }
 
@@ -1892,7 +1927,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
 
         loadActiveDetailTab(commit: commit)
     }
-
 
     private func fillCommitInfo(_ commit: Commit) {
         guard layout.commitInfoPosition != .belowList || selectedDetailController === commitDetailController else { return }
@@ -2037,7 +2071,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
 
     private func presentOpenRepositoryPanel() {
         guard repositoryModule is any RepositoryOpeningDataSource else {
-            showPlaceholderStatus(for: "Open repository is unavailable for mock data")
+            showPlaceholderStatus(for: "Open repository is unavailable for this repository")
             return
         }
 
@@ -2057,6 +2091,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             else { return }
 
             repositoryStateLoadTask?.cancel()
+            workingDirectoryStatusTask?.cancel()
             revisionDetailsTask?.cancel()
             statusMonitor.stop()
             statusLabel.stringValue = "Opening \(url.path)…"
@@ -2120,7 +2155,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         window.setFrame(fittedFrame, display: true)
     }
 
-
     private func setInitialDividerPositionsIfNeeded() {
         guard !didSetInitialDividerPositions,
               mainSplitController.view.bounds.width > 400,
@@ -2166,11 +2200,9 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         saveLayout()
     }
 
-
     @objc func toggleSplitLayout() {
         setShowSplitViewLayout(!layout.showSplitViewLayout)
     }
-
 
     @objc private func cycleCommitInfoPosition() {
         let next = (layout.commitInfoPosition.rawValue + 1) % BrowserLayoutPreferences.CommitInfoPosition.allCases.count
@@ -2193,7 +2225,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     @objc private func chooseCommitInfoPosition(_ sender: NSMenuItem) {
         setCommitInfoPosition(.init(rawValue: sender.tag) ?? .belowList)
     }
-
 
     @objc private func selectWorkingDirectory() {}
 
@@ -2324,9 +2355,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
 
     @objc private func fileExplorerToolbar(_ sender: NSButton) { uiCommands.openFileExplorer() }
 
-
-
-
     private static let pullShortcutButtons: [(String, String, String, BrowserCommand)] = [
         ("pull_shortcut_fetchToolStripMenuItem", "Fetch", "PullFetch", .fetch),
         ("pull_shortcut_fetchAllToolStripMenuItem", "Fetch all", "PullFetchAll", .fetchAll),
@@ -2398,12 +2426,10 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     private func toggleToolbar(_ name: String) {
         toolbarVisible[name] = !(toolbarVisible[name] ?? true)
         applyToolbarVisibility()
     }
-
 
     private func toggleToolbarItem(_ key: String) {
         guard let item = toolbarItems.first(where: { $0.key == key }) else { return }
@@ -2437,7 +2463,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         uiCommands.openTerminal(shellID: id)
     }
 
-
     @objc private func levelUpToolbar() {
         if let superproject = superprojectURL {
             _ = onApplicationCommand?(.openRecentRepository(superproject))
@@ -2451,7 +2476,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         return current.parentURL
     }
 
-
     private func refreshToolbarNavigationState() {
         let inSubmodule = superprojectURL != nil
         levelUpButton.image = AppKitFactory.resourceImage(inSubmodule ? "NavigateUp" : "SubmodulesManage",
@@ -2462,14 +2486,12 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         rebuildWorkingDirectoryMenu()
     }
 
-
     private func refreshToolbarNavigationStateVisibility() {
         let showsWorktrees = (repositoryNavigation?.worktrees.count ?? 0) > 1
             && (toolbarVisible["Standard"] ?? true) && isToolbarItemVisible("toolStripWorktrees")
         worktreeButton.isHidden = !showsWorktrees
         worktreeDropdownButton.isHidden = !showsWorktrees
     }
-
 
     private func rebuildWorkingDirectoryMenu() {
         let menu = NSMenu()
@@ -2586,7 +2608,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         showPlaceholderStatus(for: sender.titleOfSelectedItem ?? "Option")
     }
 
-
     func showRevisionFilterDialog() {
         guard let window = view.window else { return }
         RevisionFilterDialogController.present(filter: revisionGridController.currentFilter,
@@ -2596,7 +2617,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     private func loadGridLabelContext() {
         labelContextTask?.cancel()
         let gridSource = repositoryModule as? any RepositoryRevisionGridDataSource
@@ -2605,7 +2625,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             let preferences = AppSettingsStore.shared.revisionGridPreferences
             var context = RevisionLabelContext()
             if AppSettingsStore.shared.browseDisplayPreferences.showAheadBehind {
-                context.aheadBehindByLocal = repositoryAheadBehind
+                context.aheadBehindByLocal = self?.repositoryAheadBehind ?? [:]
             }
             context.superproject = await gridSource?.superprojectInfo(branches: preferences.showSuperprojectBranches,
                                                                       remoteBranches: preferences.showSuperprojectRemoteBranches,
@@ -2618,7 +2638,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             revisionGridController.labelContext = context
         }
     }
-
 
     func publishGridMenuState() {
         BrowserCommandAvailability.shared.gridMenuState = revisionGridController.menuState
@@ -2731,8 +2750,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         guard let item = sender.representedObject as? SubmoduleTreeItem else { return }
         uiCommands.startOpenSubmodule(item, newWindow: item.isCurrent)
     }
-
-
 
     private func refRevision(_ id: ObjectID, label: String) -> Commit {
         revisions.first { $0.id == .object(id) } ?? RevisionCommitBuilder.placeholderRevision(id: id, subject: label)
@@ -3160,7 +3177,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     private func performFileViewerCommand(_ identifier: String, item: FileStatusListItem) {
         guard let repository = repositoryIdentity?.currentRepository else { return }
         let fileURL = URL(fileURLWithPath: repository.path, isDirectory: true).appendingPathComponent(item.file.path)
@@ -3176,7 +3192,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     private func configureFileStatusController(_ controller: RevisionDiffViewController) {
         guard let repository = repositoryIdentity?.currentRepository else { return }
         controller.isBareRepository = repository.isBare
@@ -3188,7 +3203,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     func describeRevision(_ revision: RevisionID?) -> String {
         switch revision {
         case .object(let id)?: revisions.first { $0.id == .object(id) }.map(RevisionDescription.describe) ?? id.shortString
@@ -3197,7 +3211,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         case nil: ""
         }
     }
-
 
     private func loadDiffTools() {
         guard let source = repositoryModule as? any RepositoryFileStatusDataSource else { return }
@@ -3208,7 +3221,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     private func parents(of revision: RevisionID) -> [RevisionID] {
         switch revision {
         case .workingDirectory: [.index]
@@ -3217,19 +3229,16 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         }
     }
 
-
     private func refreshArtificialRevisions() {
         guard revisions.contains(where: \.isArtificial) else { return }
         reloadRepositoryState(preferredCommitID: selectedCommitID)
     }
-
 
     private func applicationActivated() {
         guard AppSettingsStore.shared.commitPreferences.refreshOnFocus, repositoryIdentity != nil else { return }
         if selectedDetailController === revisionDiffController { revisionDiffController.refreshArtificial() }
         else if selectedDetailController === fileTreeController { fileTreeController.refreshArtificial() }
     }
-
 
     private func performFileListHotkey(_ identifier: String) {
         let diffVisible = selectedDetailController === revisionDiffController
@@ -3258,7 +3267,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             break
         }
     }
-
 
     private func performFileStatusCommand(_ command: FileStatusListCommand, from controller: RevisionDiffViewController) {
         switch command.identifier {
@@ -3421,7 +3429,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     ) {
         guard let mutationSource = repositoryModule as? any RepositoryStashWorkflowDataSource,
               let window = view.window else {
-            showPlaceholderStatus(for: "Stash is unavailable for mock data")
+            showPlaceholderStatus(for: "Stash is unavailable for this repository")
             return
         }
         let previousSelection = selectedCommitID
@@ -3460,7 +3468,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     private func beginDropStash(_ stash: Stash) {
         guard let mutationSource = repositoryModule as? any RepositoryStashWorkflowDataSource,
               let window = view.window else {
-            showPlaceholderStatus(for: "Drop stash is unavailable for mock data")
+            showPlaceholderStatus(for: "Drop stash is unavailable for this repository")
             return
         }
         let previousSelection = selectedCommitID
@@ -3604,7 +3612,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     private func beginAbortCherryPick() {
         guard let mutationSource = repositoryModule as? any RepositoryCherryPickDataSource,
               let window = view.window else {
-            showPlaceholderStatus(for: "Abort cherry-pick is unavailable for mock data")
+            showPlaceholderStatus(for: "Abort cherry-pick is unavailable for this repository")
             return
         }
         let previousSelection = selectedCommitID
@@ -3683,7 +3691,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     private func beginAbortRebase() {
         guard let mutationSource = repositoryModule as? any RepositoryRebaseDataSource,
               let window = view.window else {
-            showPlaceholderStatus(for: "Abort rebase is unavailable for mock data")
+            showPlaceholderStatus(for: "Abort rebase is unavailable for this repository")
             return
         }
         let previousSelection = selectedCommitID
@@ -3758,7 +3766,6 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
             ?? revisions.first(where: { !$0.isArtificial }) else { return }
         uiCommands.startBisect([commit])
     }
-
 
     private func updateGitActionBanner(_ action: BrowserGitAction, hasConflicts: Bool) {
         gitAction = action
@@ -3882,7 +3889,7 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
     ) {
         guard let mutationSource = repositoryModule as? any RepositoryBrowserMutationDataSource,
               let window = view.window else {
-            showPlaceholderStatus(for: "Repository mutation is unavailable for mock data")
+            showPlaceholderStatus(for: "Repository mutation is unavailable for this repository")
             return
         }
         let previousSelection = selectedCommitID

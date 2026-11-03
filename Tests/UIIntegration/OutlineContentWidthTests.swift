@@ -16,6 +16,15 @@ extension UIIntegrationTests {
 
         private static func settle() async throws { try await Task.sleep(for: .milliseconds(80)) }
 
+        private static func clipFrameChanges(_ scroll: NSScrollView) async throws -> Int {
+            scroll.contentView.postsFrameChangedNotifications = true
+            var count = 0
+            let observer = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: scroll.contentView, queue: .main) { _ in count += 1 }
+            defer { NotificationCenter.default.removeObserver(observer) }
+            try await Task.sleep(for: .milliseconds(300))
+            return count
+        }
+
         @Test("Scrollable outlines keep full row width instead of shrinking to the viewport")
         static func keepsContentWidth() async throws {
             let source = Source()
@@ -71,6 +80,22 @@ extension UIIntegrationTests {
             try await settle()
             #expect(scroll.hasVerticalScroller && outline.frame.height > scroll.contentView.bounds.height, "list needs a vertical scrollbar")
             #expect(outline.frame.width <= scroll.contentView.bounds.width + 0.5, "short rows never need a horizontal scrollbar, even next to a legacy vertical scroller: outline \(outline.frame.width) clip \(scroll.contentView.bounds.width)")
+            #expect(try await clipFrameChanges(scroll) == 0, "fitting settles instead of toggling the legacy horizontal scroller")
+
+            outline.intercellSpacing = .zero
+            for style in [NSTableView.Style.automatic, .fullWidth, .inset] {
+                outline.style = style
+                source.items = ["a.txt", "b.txt", "c.txt"]
+                outline.reloadData()
+                fitter.setNeedsUpdate()
+                try await settle()
+                #expect(try await clipFrameChanges(scroll) == 0, "\(style.rawValue)-style list without intercell spacing settles next to legacy scrollers")
+                #expect(abs(outline.frame.width - scroll.contentView.bounds.width) <= 0.5, "\(style.rawValue)-style list without intercell spacing fills the viewport without overflow: outline \(outline.frame.width) clip \(scroll.contentView.bounds.width)")
+            }
+            outline.style = .automatic
+            outline.intercellSpacing = NSTableView().intercellSpacing
+            source.items = (0..<60).map { "File\($0).swift" }
+            outline.reloadData()
 
             keepsFullWidth = false
             fitter.setNeedsUpdate()
@@ -84,6 +109,7 @@ extension UIIntegrationTests {
                 fitter.setNeedsUpdate()
                 try await settle()
                 #expect(outline.frame.width <= scroll.contentView.bounds.width + 0.5, "empty \(style.rawValue)-style list has no horizontal overflow: outline \(outline.frame.width) clip \(scroll.contentView.bounds.width)")
+                #expect(try await clipFrameChanges(scroll) == 0, "empty \(style.rawValue)-style list settles")
             }
         }
     }

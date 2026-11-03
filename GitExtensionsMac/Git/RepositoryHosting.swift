@@ -288,7 +288,7 @@ private final class HostRedirectPolicy: NSObject, URLSessionTaskDelegate, @unche
 package typealias HostTransport = @Sendable (URLRequest) async throws -> (Data, HTTPURLResponse)
 
 package enum HostHTTP {
-    package static func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+    @Sendable package static func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCredentialStorage = nil
         configuration.httpCookieStorage = nil
@@ -330,8 +330,6 @@ package struct RepositoryHostClient: Sendable {
     }
 
     package func with(_ identity: HostedRepositoryIdentity) -> Self { Self(identity: identity, token: token, transport: transport) }
-
-
 
     package static func publicUserAvatar(_ login: String, size: Int, transport: @escaping Transport = { try await HostHTTP.send($0) }) async throws -> URL? {
         struct Profile: Decodable { let avatar_url: String? }

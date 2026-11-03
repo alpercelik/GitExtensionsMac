@@ -20,7 +20,6 @@ package struct FileHistoryReadRequest: Sendable {
 
 package protocol RepositoryFileHistoryDataSource: Sendable {
 
-
     func fileHistoryReadRequest() async throws -> FileHistoryReadRequest
 }
 
@@ -32,8 +31,6 @@ extension GitRepositoryModule: RepositoryFileHistoryDataSource {
             reader: RevisionReader(git: git, directory: repository.rootURL), identity: state.identity, references: state.references)
     }
 }
-
-
 
 package struct RevisionBatchPolicy: Sendable {
     package let initialCount: Int
@@ -55,7 +52,6 @@ package actor RevisionReader {
     private var activeSession: RevisionStreamSession?
     private var readGeneration = 0
     private var filePaths: [ObjectID: String] = [:]
-
 
     package func fileName(at revision: ObjectID, path: String, exactOnly: Bool = false) async -> String {
         guard !path.hasSuffix("/") else { return path }
@@ -126,7 +122,7 @@ package actor RevisionReader {
                             let follow = try await git.run(RevisionLogCommands.follow(path: paths[0], exactOnly: options.followRenamesExactOnly), in: directory)
                             guard !Task.isCancelled else { throw CancellationError() }
                             let parsed = RevisionLogCommands.followedPaths(follow.standardOutputString)
-                            await self.rememberPaths(parsed.byRevision, generation: generation)
+                            self.rememberPaths(parsed.byRevision, generation: generation)
                             let names = parsed.names
                             if follow.succeeded, !names.isEmpty { paths = names }
                         }
@@ -385,7 +381,6 @@ package struct ResolvedGitRepository: Sendable {
     package let isBare: Bool
 }
 
-
 package struct RevisionReadOptions: Sendable, Equatable {
     package var filter = RevisionGridFilter()
     package var sortOrder: RevisionSortOrder = .gitDefault
@@ -399,7 +394,6 @@ package struct RevisionReadOptions: Sendable, Equatable {
     package var loadNotes = false
 
     package var followRenames = true
-
 
     package var followRenamesExactOnly: Bool? = nil
     package init() {}
@@ -445,7 +439,6 @@ package struct RevisionReadContext: Sendable {
         return context
     }
 
-
     package var effectiveStashes: [GitStashRecord] { options.showStashes ? stashes : [] }
     package var showsArtificial: Bool { includeArtificial && options.showArtificialCommits }
 }
@@ -467,7 +460,6 @@ package enum RevisionCommitBuilder {
             references: []
         )
     }
-
 
     package static func artificialRevisions(headID: ObjectID?, attachedTo anchor: ObjectID?) -> [Commit] {
         var rows = artificialRevisions(headID: headID)
@@ -690,12 +682,6 @@ package actor GitRepositoryModule: RepositoryOpeningDataSource {
         let parsedStatus = repository.isBare ? [] : try await loadStatus(repository: repository)
         statusRecords = parsedStatus
         sharedStatus[repository.rootURL] = parsedStatus
-        let workingDirectoryChangeCount = parsedStatus.filter { record in
-            record.indexStatus != "." && record.indexStatus != " "
-                || record.worktreeStatus != "." && record.worktreeStatus != " "
-                || record.isUntracked
-                || record.isConflict
-        }.count
 
         let refModels = makeRefs(records: refRecords, currentBranch: currentBranch, headID: headID)
         let branches = refModels.localBranches
@@ -753,13 +739,7 @@ package actor GitRepositoryModule: RepositoryOpeningDataSource {
             submodules: submodules,
             submoduleTree: submoduleTree
         )
-        let status = RepositoryStatusSummary(
-            workingDirectoryChangeCount: workingDirectoryChangeCount,
-            worktree: GitStatusRecord.revisionChangeCounts(parsedStatus, staged: false),
-            index: GitStatusRecord.revisionChangeCounts(parsedStatus, staged: true),
-            visualState: GitStatusRecord.visualState(parsedStatus),
-            statusEntryCount: GitStatusRecord.entryCount(parsedStatus)
-        )
+        let status = Self.statusSummary(parsedStatus)
         return RepositoryLoadState(
             identity: identity,
             references: references,
@@ -767,7 +747,33 @@ package actor GitRepositoryModule: RepositoryOpeningDataSource {
             status: status,
             revisionReadRequest: revisionReadRequest,
             aheadBehind: await aheadBehindData(),
-            monitoringURLs: Self.monitoringURLs(repository: repository, submodules: submoduleTree)
+            monitoringURLs: Self.monitoringURLs(repository: repository, submodules: submoduleTree),
+            revisionChangeURLs: Self.revisionChangeURLs(repository: repository)
+        )
+    }
+
+    package func loadWorkingDirectoryStatus() async throws -> RepositoryStatusSummary {
+        guard let repository = resolvedRepository else { throw RepositoryDataSourceError.unavailable }
+        let parsedStatus = repository.isBare ? [] : try await loadStatus(repository: repository)
+        try Task.checkCancellation()
+        statusRecords = parsedStatus
+        sharedStatus[repository.rootURL] = parsedStatus
+        return Self.statusSummary(parsedStatus)
+    }
+
+    static func statusSummary(_ records: [GitStatusRecord]) -> RepositoryStatusSummary {
+        let workingDirectoryChangeCount = records.filter { record in
+            record.indexStatus != "." && record.indexStatus != " "
+                || record.worktreeStatus != "." && record.worktreeStatus != " "
+                || record.isUntracked
+                || record.isConflict
+        }.count
+        return RepositoryStatusSummary(
+            workingDirectoryChangeCount: workingDirectoryChangeCount,
+            worktree: GitStatusRecord.revisionChangeCounts(records, staged: false),
+            index: GitStatusRecord.revisionChangeCounts(records, staged: true),
+            visualState: GitStatusRecord.visualState(records),
+            statusEntryCount: GitStatusRecord.entryCount(records)
         )
     }
 
@@ -1177,8 +1183,12 @@ package actor GitRepositoryModule: RepositoryOpeningDataSource {
             throw GitError.invalidRepository(url.path)
         }
 
-        let probe = await result(GitCommand(arguments: ["rev-parse", "--absolute-git-dir"], accessesRemote: false, changesRepositoryState: false), directory: url)
+        let probe = try await git.run(GitCommand(arguments: ["rev-parse", "--absolute-git-dir"], accessesRemote: false, changesRepositoryState: false), in: url)
         if !probe.succeeded {
+            let version = try await git.run(GitCommand(arguments: ["--version"], accessesRemote: false, changesRepositoryState: false), in: url)
+            guard version.succeeded else {
+                throw GitError.launchFailed(version.standardErrorString.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
             if let failure = DubiousRepositoryOwnership.recognize(probe.standardErrorString, accessing: url) {
                 pendingOwnershipFailure = failure
                 throw failure
@@ -1683,6 +1693,13 @@ private extension String {
 }
 
 extension GitRepositoryModule {
+    static func revisionChangeURLs(repository: ResolvedGitRepository) -> [URL] {
+        let gitDirectory = repository.gitDirectoryURL
+        let common = (try? String(contentsOf: gitDirectory.appendingPathComponent("commondir"), encoding: .utf8))
+            .map { URL(fileURLWithPath: $0.trimmingCharacters(in: .whitespacesAndNewlines), relativeTo: gitDirectory).standardizedFileURL } ?? gitDirectory
+        return [gitDirectory.appendingPathComponent("index"), common.appendingPathComponent("refs", isDirectory: true)]
+    }
+
     static func monitoringURLs(repository: ResolvedGitRepository, submodules: [SubmoduleTreeItem]) -> [URL] {
         var urls = [repository.rootURL, repository.gitDirectoryURL]
         for item in submodules where item.isInitialized {

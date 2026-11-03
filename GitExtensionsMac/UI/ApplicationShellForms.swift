@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 @MainActor
 final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
     private var settings: RecentRepositorySettings
@@ -181,7 +180,6 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         return value
     }
 
-
     private func refreshRepos() {
         let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
         let splitter = RecentRepoSplitter(settings: currentSettings) { ($0 as NSString).size(withAttributes: [.font: font]).width }
@@ -190,7 +188,6 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         recentList.reloadData()
         setComboWidth()
     }
-
 
     private func setComboWidth() {
         for (table, repos) in [(topList, topRepos), (recentList, recentRepos)] {
@@ -215,7 +212,6 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         else if sender === comboWidth { comboMinWidthChanged() }
     }
 
-
     private func comboMinWidthChanged() {
         var value = comboWidth.integerValue
         guard value != previousComboWidth else { return }
@@ -227,8 +223,6 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         previousComboWidth = value
         setComboWidth()
     }
-
-
 
     private func repos(for table: NSTableView) -> [RecentRepoInfo] { table === topList ? topRepos : recentRepos }
 
@@ -263,11 +257,9 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         refreshRepos()
     }
 
-
     @objc private func doubleClicked(_ sender: NSTableView) {
         setAnchor(sender === topList ? .anchoredInRecent : .anchoredInTop, for: selected(sender))
     }
-
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
@@ -291,9 +283,6 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         }
     }
 
-
-
-
     @objc private func ok() {
         guard view.window?.makeFirstResponder(nil) != false else { return }
         comboMinWidthChanged()
@@ -312,7 +301,6 @@ final class RecentRepositoriesSettingsDialog: NSViewController, NSTableViewDataS
         completion?(saved)
     }
 }
-
 
 @MainActor
 final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
@@ -344,7 +332,6 @@ final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
 
     required init?(coder: NSCoder) { nil }
 
-
     static func directories(store: AppSettingsStore, currentRepository: URL?) -> [String] {
         func withSeparator(_ path: String) -> String { path.hasSuffix("/") ? path : path + "/" }
         var directories: [String] = []
@@ -362,7 +349,6 @@ final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
         var seen = Set<String>()
         return directories.filter { seen.insert($0).inserted }
     }
-
 
     static func openGitRepository(_ path: String, store: AppSettingsStore) -> URL? {
         var isDirectory: ObjCBool = false
@@ -416,7 +402,6 @@ final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
     func controlTextDidChange(_ obj: Notification) { updateGoUp() }
     func comboBoxSelectionDidChange(_ notification: Notification) { DispatchQueue.main.async { self.updateGoUp() } }
 
-
     private func updateGoUp() {
         var isDirectory: ObjCBool = false
         let path = directory.stringValue
@@ -434,7 +419,6 @@ final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
         updateGoUp()
     }
 
-
     @objc private func browse() {
         guard let window = view.window else { return }
         let picker = NSOpenPanel()
@@ -448,7 +432,6 @@ final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
             open()
         }
     }
-
 
     @objc private func open() {
         let path = directory.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -476,15 +459,13 @@ final class OpenLocalRepositoryDialog: NSViewController, NSComboBoxDelegate {
     }
 }
 
-
 @MainActor
 final class DonateWindowController: NSWindowController {
     private static var shared: DonateWindowController?
 
-    static let donateText = "We have a dedicated team of collaborators that spends a lot of time maintaining the app, working on new features and fixing bugs."
-        + "You can support the project by making a financial contribution. Donations will be used to cover running costs "
-        + "and to get the resources needed to keep the project running. We will also use donations to thank collaborators for their efforts.\n\n"
-        + "Click on the button below to get more information about making a donation."
+    static let donateText = "GitExtensionsMac is an unofficial macOS port of Git Extensions, which is built and maintained by the Git Extensions team. "
+        + "Donations made through the button below go to the upstream Git Extensions project, not to this port.\n\n"
+        + "Click on the button below to get more information about supporting Git Extensions."
 
     static func show() {
         if shared == nil {
@@ -532,7 +513,6 @@ final class DonateWindowController: NSWindowController {
     @objc private func openDonation() { NSWorkspace.shared.open(DashboardViewController.donationURL) }
 }
 
-
 @MainActor
 final class AboutWindowController: NSWindowController {
     private static var shared: AboutWindowController?
@@ -548,12 +528,14 @@ final class AboutWindowController: NSWindowController {
 
     convenience init() {
         let window = NSWindow(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "About Git Extensions"
+        window.title = "About GitExtensionsMac"
         window.isReleasedWhenClosed = false
         self.init(window: window)
         let logo = NSImageView(image: AppKitFactory.resourceImage("GitExtensionsLogo256", size: NSSize(width: 128, height: 128)) ?? NSImage())
-        let product = linkButton("Git Extensions", size: 22) { NSWorkspace.shared.open(DashboardViewController.developURL) }
-        let copyright = NSTextField(labelWithString: "Proudly presented by Git Extensions team")
+        let product = linkButton("GitExtensionsMac", size: 22) { NSWorkspace.shared.open(DashboardViewController.projectURL) }
+        let copyright = linkButton("Unofficial macOS port of Git Extensions", size: NSFont.systemFontSize) {
+            NSWorkspace.shared.open(DashboardViewController.developURL)
+        }
         environment.font = .monospacedSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
         environment.isSelectable = true
         let copy = NSButton(image: AppKitFactory.resourceImage("CopyToClipboard", accessibilityDescription: "Copy environment info") ?? NSImage(),
@@ -570,7 +552,7 @@ final class AboutWindowController: NSWindowController {
         let icons = linkButton("Some icons by Yusuke Kamiyamane (CCA3)", size: NSFont.systemFontSize) {
             NSWorkspace.shared.open(URL(string: "http://p.yusukekamiyamane.com/")!)
         }
-        let involved = NSTextField(wrappingLabelWithString: "Git Extensions is open source. Get involved!")
+        let involved = NSTextField(wrappingLabelWithString: "Support the upstream Git Extensions project")
         involved.alignment = .center
         involved.preferredMaxLayoutWidth = 150
         involved.widthAnchor.constraint(lessThanOrEqualToConstant: 150).isActive = true
@@ -639,14 +621,13 @@ final class AboutWindowController: NSWindowController {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         let count = formatter.string(from: NSNumber(value: contributors.count)) ?? "\(contributors.count)"
-        thanksTo.title = "Thanks to over \(count) contributors: \(name)"
+        thanksTo.title = "Thanks to over \(count) Git Extensions contributors: \(name)"
     }
 
     @objc private func copyEnvironment() { Task { await UserEnvironmentInformation.copyInformation() } }
     @objc private func donate() { NSWorkspace.shared.open(DashboardViewController.donationURL) }
     @objc private func showContributors() { ContributorsWindowController.show(owner: window) }
 }
-
 
 @MainActor
 final class ContributorsWindowController: NSWindowController {
@@ -722,7 +703,8 @@ enum OwnedModalWindow {
         window.makeKeyAndOrderFront(nil)
         while window.isVisible, !Task.isCancelled {
             let session = NSApp.beginModalSession(for: window)
-            while window.isVisible, !Task.isCancelled, NSApp.runModalSession(session) == .continue {
+            while window.isVisible, !Task.isCancelled {
+                if RunLoop.main.currentMode != .eventTracking, NSApp.runModalSession(session) != .continue { break }
                 do { try await Task.sleep(for: .milliseconds(20)) }
                 catch { break }
             }

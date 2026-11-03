@@ -246,8 +246,8 @@ package extension GitCommandRunning {
 package final class GitProcess: GitCommandRunning, @unchecked Sendable {
     private let executableURL: URL
     fileprivate var commandExecutablePath: String { executableURL.path }
-    private let executionQueue = DispatchQueue(label: "com.gitextensions.mac.git-process", qos: .userInitiated, attributes: .concurrent)
-    private let ioQueue = DispatchQueue(label: "com.gitextensions.mac.git-process-io", qos: .userInitiated, attributes: .concurrent)
+    private let executionQueue = DispatchQueue(label: "io.github.norgera.gitextensionsmac.git-process", qos: .userInitiated, attributes: .concurrent)
+    private let ioQueue = DispatchQueue(label: "io.github.norgera.gitextensionsmac.git-process-io", qos: .userInitiated, attributes: .concurrent)
 
     package init(executableURL: URL = URL(fileURLWithPath: "/usr/bin/git")) {
         self.executableURL = executableURL

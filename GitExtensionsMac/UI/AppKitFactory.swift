@@ -333,9 +333,6 @@ enum AppKitFactory {
         let loadedImage: NSImage?
         if let url = Bundle.main.url(forResource: name, withExtension: "png") ?? Bundle.main.url(forResource: name, withExtension: "ico") {
             loadedImage = NSImage(contentsOf: url)
-        } else if let encoded = embeddedGitExtensionsImages[name],
-                  let data = Data(base64Encoded: encoded) {
-            loadedImage = NSImage(data: data)
         } else {
             loadedImage = nil
         }
@@ -474,15 +471,6 @@ enum AppKitFactory {
         return label
     }
 }
-
-private let embeddedGitExtensionsImages: [String: String] = [
-    "Information": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABTVBMVEUBDoACF5ACGpUDLLMDLbUDL7j///8DL7kCG5cDLLIABnUDLbUDL7gCGJIBD4IDMLoDKq8CHpsABXIDMLoCJ6sCIJ8ABXINOL0MNLcNNbgDMLoGIJwIIZwCJacCI6MGFYkUPb8VPsAABXIKI50LJJ0/ZthBaNkyV8k8YdElR70aPbggPbhmie1ni+02WcFWed0qUMVCZdBafuNihupkhulniu02YeM0YOAxW9g2YuE4YdoxVL1Ze91ylfRzlvRAcPVVd9kvVcIvWMs1YNgoTrkqUL4mSrQnSrA6Z+U+b/FEZsxHac9OcNbNzc3W1tb///80X9cjRawkRq0lSLE/b/EmSK4sUsBKbNIsVMNQcthXed9Ze+BfgecmSbIwWc3i4uLt7e0xWs9WeNxAYslCZMoxVL1lh+plh+vMzMw6aOY7X8gwWcs4Y9nu7u5TddoM/R2zAAAAQnRSTlMAAAAAAAAAGBkZGkhISktkZWhrmp2epbO0tLa4uLm6vMLCw8fH2trb293e4fHx8vLz8/Pz8/P09PT09Pz8/Pz9/f2EYWchAAAAzUlEQVQYGVXAwU7DIBgH8P/XD+lwa5pGVLOTNw8eTIzv/wa+xRITV0dKoUALw/N+JHFLoBA1O9Ei5XitlQWAdt+3QzXJ+giQLLsn/ekL+P777xyZ+a5/fks5bE1+9GuuzEp/XVJihDV9nOLGrAYGjrmuin+CTw1UV1+O6SEfnKudggCJ19FURRMBktAgTDQWTYMupZgAgRyJIFuSBKwZzEUs77ao7lx5/rWVebvSrEO3TmTGS2wE4Giz+wXBO+MIAoDNszjA5bgQQBK3/gGnO2f+J2zBzAAAAABJRU5ErkJggg==",
-    "PullMerge": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACL0lEQVQ4y4WTPWhTURTHf+/lvaQftGgj6N6lKrrcQhzs0MGpCoqD4OgStAV1KS51dHBQB0mpSKEOCkoXEVtpQUQFC3khRUhSaKK2TbGI1vSleV9577ok7Wta8MCFc8/H/xzO+R+FhiQm89eBFPvlxsK14+P8TxKTeZmVUr51dl9WSpmYzMvWWCGE0tTVsGPVgszKH2aXF/lQKlIwq5h6CfmEZ0IIpZmYThpTQggVQAsDuHWQkU58JYopbX5u/0JBATiWThpzjYIS8NJJ43X/hLiwpwPXBbeuQ9BJxa1RcWpE/XhroWoDSAOUPQC2B7ar4tWjOB6oQQda0N50S2Ctf0JcbOgSQAtPf9OEmgWWD56v4dvdEFQ5pc8ObnZkf5ev3DkHRhgQDUjdv9xHdgOKm2C5EjuQeIHCekXn6sAJurvaeTAv4+W9ywgARfVqW7dHpwvogGV71CwH23Zx3DqW4wHwcP4bW7Gl9VCy3AHIjCQemeXS8NSnAieP6GjSpw2PiPTp69F5/jGHSX5tpXLrawsdtB0e5MaGUma5NPxiocDpozEAeg9HefU5Q2U1N/rdvrnUwpkmkXa30ASZzizT2xPjfeEHf7eL97oG3j0O7T8MEOxjYm5sKGWuFUdmFovknUtz8TNfXtKmBUAkVDUsUm215O6eT2WDwRkgapx9uhiaeKQlVAUC9SBUoA64jb8P1IB6+IgAHVAOamvn2gzDkGGbYRhSCKGmk8Yb4BCw8Q/PVAcRJy6jIQAAAABJRU5ErkJggg==",
-    "PullRebase": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACBUlEQVQ4y72SvWtTURjGf+cm/QpNM1ikVUIHQWKXDhnuUukfkcnqokikMUsRujiWOhSEThUDjS7FoXQsKCgoOPiVWqcE0qg0H0q1xNx83M/c4+AtvaZWnHzg4ZyHc97nvJznFXhQs/k5YJXjSL2+duEeJ0D4DOT9qzFq1tHhmX648aCA8+zKEEBuPWf0GgT9oqxDUTvS7b42plbh/UzuERBghrZIculEA8sB0wYpXdraAWarhNHYgxAhYAiIyAxPgJJIkjpuYIFugKm32C8XOTtg0D88DvACGANGgVPAuT92YNjQMVzq+19ptToMj00wGLEQ17lzeEdmWAeiMsOmSJJQ1Gx+Ts3mJUC9Ca2Wg9ZoYjt9dAOnEUoANZuXXkqIJJcBAwgDKMDqciLG7HSMz3UwTDBNiWULyg3B7HSM5USMnoilRxS7o80vbBboA3TDRjcdXBFCN3Qa9e8EpcvCZgG7o833GGgAynZaXWlWP97MPH7OOFWsH3vohk7A7TLqVll7+gqtUkpvp9WVnvlRfhukqbu3G4Y2MXLxfJRywyI6EuTl7hcGwp+0D7eWIt4HPvQSkId1yuFmJ7y0MTBSK739FiShTvHuYJD+cKW0E17a8L3sAEWPux5/IR6PC4DJxa2Ums3LycWtFP8Dwjcgb4D6P9RIv1B87deA7l/oeKvrsQvs/wTO2+cHBSzr3wAAAABJRU5ErkJggg==",
-    "PullFetch": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABaUlEQVQ4y52Sv0sCYRzGP2epRCXUYmA01GINNhjc1NAsNFgNLQZt9Qe0ObVES1ttVi5CqNs1tYdQ4eQJWUsZNAldenpXvC2ed4fVWQ+8vO/zvu/zfH+8r0QXckY9Bnbox0lpe34XL8gZVZSFEJcde5SFEHJGFb/php3kSYf7N5t/hjzjug2MD+iYbv43AwP0toOP2Ov4+foRsAisWHu3W3nJZdA2Qe+4uQPLQLwvA2f3Gxq0dPuwodkN/iD9DjB1oUcURXmx7khyRhWHa1HKr/DQgHfDbvpYQGJuArLXG321327lJQCf2Xo72ytU8QN626Sld3pDb5v4PZooAaML+0p2PDKb3JSj3Dw30YxPxgNDLE2PkitV0eqPxZGZ06QzsgUf0KykEymt/ljMlarEwkEmgxALB3viSjqR+ikDX3fumRTuaqxGQxTuak5x08vAZXJwVR1I3PeRLJPusza9xN8ZMKjwuxL+hS+42LYAJVELiwAAAABJRU5ErkJggg==",
-    "PullFetchAll": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABxUlEQVQ4y42SP2hTURTGfy/mD0LRUoSAi4NDX1SKkJaCU8HNoIIVh4IN7SLRgB1Kt0Khi3TqVOmixiWDfR0iOjmWlkATaofmUmqGhipV8GH+3bz3WuJgb/J8bUo+ONx7D+f7zjn3HA0Pht8UloAEp/E6Oxl57nVqZxGXJ3S+2+2gq0F49laQnYxoXgGf655YntABKEkQZttKko7wux8q0D4Cy2n77aMuBVSgbYNsuPwX/53R1ONNoB/oAcjFVzTffwInfTcckFbbGg7cvrwBEFXkMytYzAgAzArUXX2bFdisfgYgZCbfr0+NxFtTcP/+wqjO1iF8M6FqN1sCX4tPTvWei69oagqJhVGda71BZgxBAJANh7q0WnYefE69/G7GENy5HiZoVUmtCW5eCeBvHiMtG3/zmKeDH9yZe1R2AF8+OZysHBRX07kS94ciXKiXSWcFA+EQfSEYCIdIZ4U7ac27SLWd2dh45aC4amyXuBftJyD/YOT3eKBfwsjvUd7fzXRsQakqkY+FH7y4ewv5+5BXXwTl/d1MYe7hWDeLVNuZjY3fmP/E4jqPLPNnZnt65CXwy1t2xz1QIidjrZ1H7CRAt0SFv6GSxo+5IPzDAAAAAElFTkSuQmCC",
-    "PullFetchPruneAll": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABu0lEQVQ4y42QMWgTURjHfzmOBikU6ZAnOlgRyqVgQRsIuDg4iRCFOnZplxLJXBCHUhelk1OlSxUEg8jREFfp5BJoMhTKXUlxOUq9Dm2943yXC20c6uudZ1ryh4/37uP7fv97/wwpFdesFaDM/3rXmMs/Tzcz/RZXZw32OvHQjSzMv7dpzOUzaYCWuJdXZw0A9jqwcxxXEpaWnvxQg2EEnW7cD6MBAWowikCGcT+6cnZuwZdrQtxS/ZzrFv4BRH8BYRdk4rfDLrx6+biZXO6XAW/rNgBHPkgZ15EPd08DAJ6++Lydc91CznULAJlk+svTBk0XfvwCGZ6eg18/u95MOyuABpSXpw1uXh1iwbQZ4mw5kNF5XSat+9v7sGDa3L8t0KXPx+82d0Y19N4JshOh9074tPFzKuH8QLkDaK1KseI57Vq16fCkOIEufaoNm0mRZTQLkyJLtWEnTYN0iIG1WJrxnHbN3HJ4dG8cXfqYrV1KxghmaxfPadcufIKiKshXa5/Kwwnkocubbzae065Zi6UZBtRwfqm+Xlyzevml+jowBgwDHAixeSDE5kAQIKcWlS4C6H0AQTqoy/QHNArH+LF8X5UAAAAASUVORK5CYII="
-]
 
 private extension NSImage {
     func adaptingGitExtensionsLightness() -> NSImage? {
@@ -651,7 +639,7 @@ final class OutlineContentWidthFitter {
         let visible = outline.enclosingScrollView?.contentView.bounds.width ?? outline.bounds.width
         let inset = outline.rect(ofColumn: 0).minX
         let content = requiredWidth() - inset
-        let fill = visible - 2 * inset - outline.intercellSpacing.width
+        let fill = visible - 2 * inset - (outline.rect(ofColumn: 0).width - column.width)
         let width = max(fill, content, column.minWidth)
         if abs(column.width - width) > 0.5 { column.width = width }
         guard content <= fill else { return }

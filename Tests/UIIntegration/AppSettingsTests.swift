@@ -122,6 +122,27 @@ extension UIIntegrationTests {
             #expect(repair != nil, "checklist diagnostic is actionable")
             #expect(repair?.imagePosition == .imageLeft && repair?.title.isEmpty == false, "diagnostic shows text alongside status icon")
             #expect(store.checkSettingsAtStartup, "invalid diagnostics do not disable startup checks")
+            let located = await GitSettingsChecklist.locateGit()
+            let gitRepair = descendants(controller.view).compactMap { $0 as? NSButton }.first { $0.accessibilityIdentifier() == "SettingsRepair.git" }
+            try #require(gitRepair != nil, "missing Git offers Repair")
+            gitRepair?.performClick(nil)
+            while window.attachedSheet == nil && ContinuousClock.now < deadline + .seconds(5) { try await Task.sleep(for: .milliseconds(20)) }
+            let sheet = try #require(window.attachedSheet, "Repair reports the Locate git result")
+            let sheetText = descendants(sheet.contentView!).compactMap { $0 as? NSTextField }.map(\.stringValue)
+            #expect(sheetText.contains("Locate git"), "upstream Locate git caption: \(sheetText)")
+            if let located {
+                #expect(sheetText.contains("Git can be run using: \(located.path)"), "located Git is reported: \(sheetText)")
+            } else {
+                #expect(sheetText.contains { $0.contains("xcode-select --install") }, "install guidance when Git cannot be located: \(sheetText)")
+            }
+            #expect(controller.currentCategoryID != "git_paths", "Git Paths opens after the message is dismissed")
+            window.endSheet(sheet)
+            while controller.currentCategoryID != "git_paths" && ContinuousClock.now < deadline + .seconds(10) { try await Task.sleep(for: .milliseconds(20)) }
+            #expect(controller.currentCategoryID == "git_paths", "Repair continues to Git Paths")
+            if let located {
+                while store.preferences.gitExecutablePath != located.path && ContinuousClock.now < deadline + .seconds(15) { try await Task.sleep(for: .milliseconds(20)) }
+                #expect(store.preferences.gitExecutablePath == located.path, "located Git is saved")
+            }
             controller.goToCategory("git")
             let labels = descendants(controller.view).compactMap { $0 as? NSTextField }.map(\.stringValue)
             #expect(labels.contains { $0.contains("Select one of the subnodes") }, "Git root is an introduction, not Paths")

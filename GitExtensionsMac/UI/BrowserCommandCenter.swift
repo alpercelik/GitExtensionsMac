@@ -99,10 +99,7 @@ enum BrowserCommand: Equatable, Sendable {
     case goToSubmodule
     case revisionGridRestoringFileFocus(String)
 
-
     case revisionGrid(String)
-
-
 
     case addNotes
 
@@ -220,7 +217,6 @@ extension BrowserCommand {
     }
 }
 
-
 struct BrowserToolbarState: Equatable, Sendable, Identifiable {
     struct Item: Equatable, Sendable, Identifiable {
         let id: String
@@ -231,7 +227,6 @@ struct BrowserToolbarState: Equatable, Sendable, Identifiable {
     var isVisible: Bool
     var items: [Item]
 }
-
 
 struct BrowserCommandEligibility: Equatable, Sendable {
 

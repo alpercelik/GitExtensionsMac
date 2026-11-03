@@ -161,7 +161,7 @@ private final class ArchiveViewController: NSViewController {
             var preferences = AppSettingsStore.shared.pullPreferences
             preferences.closeProcessOnSuccess = self.keepOpen.state == .off
             AppSettingsStore.shared.savePullPreferences(preferences)
-            self.operation = Task {
+            self.operation = Task { [self] in
                 do {
                     let result = try await self.source.archive(ArchiveRequest(revision: id, format: format, destination: destination, filter: filter)) { [weak self] event in
                         Task { @MainActor in self?.output.textStorage?.append(NSAttributedString(string: event.text,

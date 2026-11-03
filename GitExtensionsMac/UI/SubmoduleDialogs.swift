@@ -103,7 +103,7 @@ private final class SubmoduleProcessViewController: NSViewController, NSWindowDe
         progress.startAnimation(nil)
         processInput.window = panel
         let processInput = processInput
-        task = Task { @MainActor in
+        task = Task { @MainActor [self] in
             do {
                 result = try await OutputHistoryRecording.perform {
                     try await processInput.perform {
@@ -276,7 +276,7 @@ final class SubmoduleConflictViewController: NSViewController, NSWindowDelegate 
     }
     @objc private func checkoutBranch() {
         guard let panel, !busy else { return }
-        Task { @MainActor in
+        Task { @MainActor [self] in
             do {
                 let value = try await source.loadSubmoduleConflictCheckout(path: path)
                 guard let child = value.source as? any RepositoryCheckoutBranchDataSource else { return }
@@ -520,7 +520,6 @@ private final class AddSubmoduleViewController: NSViewController, NSTextFieldDel
     override func loadView() {
         let root = NSView(); remote.delegate = self; branch.delegate = self
         let settings = AppSettingsStore.shared
-        var seen: Set<String> = []
         remote.addItems(withObjectValues: settings.remoteRepositoryHistory)
         let browse = NSButton(title: "Browse…", target: self, action: #selector(browseSource))
         let sourceRow = NSStackView(views: [remote, browse]); sourceRow.spacing = 8

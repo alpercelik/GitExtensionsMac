@@ -209,14 +209,9 @@ final class GitHubRepositoryPlugin: NSObject, GitExtensionPlugin {
         window.title = "Settings — GitHub"; window.isReleasedWhenClosed = false
         window.styleMask = [.titled, .closable, .resizable]
         if let owner { window.setFrameOrigin(NSPoint(x: owner.frame.midX - window.frame.width / 2, y: owner.frame.midY - window.frame.height / 2)) }
-        await withCheckedContinuation { continuation in
-            var observer: NSObjectProtocol?
-            observer = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
-                if let observer { NotificationCenter.default.removeObserver(observer) }
-                continuation.resume()
-            }
-            window.makeKeyAndOrderFront(nil)
-        }
+        let closed = NotificationCenter.default.notifications(named: NSWindow.willCloseNotification, object: window)
+        window.makeKeyAndOrderFront(nil)
+        for await _ in closed { break }
     }
 
     static func ensureConfigured(owner: NSWindow?, host: GitExtensionPluginHost? = nil) async -> Bool {
@@ -226,7 +221,6 @@ final class GitHubRepositoryPlugin: NSObject, GitExtensionPlugin {
         return !token.isEmpty
     }
 }
-
 
 @MainActor
 struct GitHubHostingContext {
@@ -492,7 +486,7 @@ final class PullRequestsWindowController: NSWindowController, NSWindowDelegate, 
             choose.removeAllItems()
             choose.addItems(withTitles: context.remotes.map(\.displayData))
             cloneHTTPS = HostedRemote.isHTTP(context.protocolRemoteURL ?? "")
-            if let index = context.remotes.firstIndex(where: { $0.name.caseInsensitiveCompare(context.currentRemote ?? "") == .orderedSame }) {
+            if let index = context.remotes.firstIndex(where: { $0.name.caseInsensitiveCompare(self.context.currentRemote ?? "") == .orderedSame }) {
                 choose.selectItem(at: index)
             } else if !context.remotes.isEmpty { choose.selectItem(at: 0) }
             busy = false
@@ -763,7 +757,7 @@ final class CreateHostedPullRequestWindowController: NSWindowController, NSWindo
         targetRepository.target = self; targetRepository.action = #selector(targetChanged)
         yourBranch.delegate = self; targetBranch.delegate = self
         yourBranch.stringValue = "Loading..."
-        tasks.append(Task { @MainActor [weak self] in await self?.load() })
+        tasks.append(Task { @MainActor [weak self] in self?.load() })
     }
     required init?(coder: NSCoder) { nil }
     func windowWillClose(_ notification: Notification) { tasks.forEach { $0.cancel() }; subjectTask?.cancel() }
@@ -775,8 +769,8 @@ final class CreateHostedPullRequestWindowController: NSWindowController, NSWindo
                 if let first = context.remotes.first { login = try await context.client(first.identity).currentUser() }
             } catch is CancellationError { return }
             catch { login = "" }
-            foreign = context.remotes.filter { $0.identity.owner != login }
-            mine = context.remotes.first { $0.identity.owner == login }
+            foreign = context.remotes.filter { $0.identity.owner != self.login }
+            mine = context.remotes.first { $0.identity.owner == self.login }
             guard !foreign.isEmpty else {
                 HostingMessages.error("Failed to create pull request.\nPlease clone GitHub repository before pull request.", "")
                 close(); return

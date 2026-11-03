@@ -7,13 +7,11 @@ struct RevisionGraphLayout: Hashable, Sendable {
     static let maximumVisibleLanes = 40
     static let colorCount = 7
 
-
     enum DrawStyle: Hashable, Sendable {
         case normal
         case drawNonRelativesGray
         case highlightSelected
     }
-
 
     struct Configuration: Hashable, Sendable {
         var mergeCommonParentLanes: Bool
@@ -105,7 +103,6 @@ struct RevisionGraphLayout: Hashable, Sendable {
 
     var parentIDs: [RevisionID: [RevisionID]] = [:]
 
-
     struct LaneNode: Hashable, Sendable {
         let lane: Int
 
@@ -114,7 +111,6 @@ struct RevisionGraphLayout: Hashable, Sendable {
 
         let singleChildID: RevisionID?
     }
-
 
     func node(atRow row: Int, lane: Int) -> LaneNode? {
         guard laneNodes.indices.contains(row), lane >= 0 else { return nil }
@@ -136,8 +132,6 @@ struct RevisionGraphLayout: Hashable, Sendable {
         return try! graph.build()
     }
 }
-
-
 
 actor RevisionGraphCache {
     struct Snapshot: Sendable {
@@ -182,7 +176,6 @@ actor RevisionGraphCache {
             return Snapshot(orderedIDs: graph.commits.map(\.id), relatives: graph.relativeIDs,
                             layout: layout, preparedRowCount: graph.preparedRowCount)
         } catch {
-
 
             input = []; history = []; self.configuration = nil; ordering = nil; builder = nil
             throw error
@@ -362,7 +355,6 @@ private final class GraphBuilder {
     let commits: [Commit]
     private let insertedArtificial: Set<RevisionID>
     private let configuration: Layout.Configuration
-    private let commitByID: [RevisionID: Commit]
     private let visibleIDs: Set<RevisionID>
     private let visibleParentsByID: [RevisionID: [RevisionID]]
     private let rowIndexByID: [RevisionID: Int]
@@ -388,7 +380,7 @@ private final class GraphBuilder {
         commits = ordered.commits
         insertedArtificial = ordered.inserted
         self.configuration = configuration
-        commitByID = Dictionary(completeHistory.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let commitByID = Dictionary(completeHistory.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         visibleIDs = Set(commits.map(\.id))
         rowIndexByID = Dictionary(commits.enumerated().map { ($0.element.id, $0.offset) }, uniquingKeysWith: { first, _ in first })
 
@@ -403,7 +395,6 @@ private final class GraphBuilder {
             )
         }
         visibleParentsByID = parents
-
 
         var relatives: Set<RevisionID> = []
         let listed = Set(ordered.commits.map(\.id))
@@ -431,16 +422,11 @@ private final class GraphBuilder {
         segmentsByChildID = segments
     }
 
-
-
-
     static func orderedByScore(_ commits: [Commit], onlyFirstParent: Bool) -> (commits: [Commit], inserted: Set<RevisionID>) {
         let ordering = ScoreOrdering(onlyFirstParent: onlyFirstParent)
         try! ordering.append(commits)
         return ordering.ordered()
     }
-
-
 
     final class ScoreOrdering {
         final class Node {
@@ -462,7 +448,6 @@ private final class GraphBuilder {
             self.onlyFirstParent = onlyFirstParent
             self.cancellable = cancellable
         }
-
 
         private func ensureScoreIsAbove(_ node: Node, _ minimal: Int) throws -> Int {
             guard minimal > node.score else { return node.score }
@@ -499,7 +484,6 @@ private final class GraphBuilder {
             let trails = (hasReal && commits.contains(where: \.isArtificial))
                 || (firstRealIndex.map { commits[$0...].contains(where: \.isArtificial) } ?? false)
             if trails && !trailingArtificial && !artificial.isEmpty {
-
 
                 let previous = added.filter { !$0.isArtificial }
                 nodes = [:]; incomplete = [:]; added = []; maxScore = 0
@@ -552,8 +536,6 @@ private final class GraphBuilder {
             return (ordered, Set(artificial.map(\.id)))
         }
     }
-
-
 
     func reusePreparedRows(from previous: GraphBuilder) {
         guard configuration == previous.configuration, commits.count >= previous.rows.count else { return }
@@ -617,8 +599,6 @@ private final class GraphBuilder {
             renderedLaneNodes.append(laneNodesForRow(rows[index]))
         }
 
-
-
         let displayCount = max(stableCount, min(rows.count, requestedRow == .max ? rows.count : max(0, requestedRow) + 1))
         var displayed = renderedRows
         var laneNodes = renderedLaneNodes
@@ -649,8 +629,6 @@ private final class GraphBuilder {
             segmentParentIDs: state.segments.map(\.parentID))
     }
 
-
-
     private func nodeColor(for row: RowState) -> Int? {
         let candidates = row.segments.reversed().filter { segment in
             guard segment.parentID == row.revisionID || segment.childID == row.revisionID,
@@ -660,7 +638,6 @@ private final class GraphBuilder {
         let drawOrder = candidates.filter { !relativeIDs.contains($0.childID) } + candidates.filter { relativeIDs.contains($0.childID) }
         return drawOrder.last.map { colorBySegment[$0].map(\.index) ?? Self.chooseColor(seed: Self.objectIDHash($0.childID), avoiding: [], count: configuration.colorCount) }
     }
-
 
     private func laneNodesForRow(_ row: RowState) -> [Layout.LaneNode] {
         var result = [Layout.LaneNode(lane: max(0, row.revisionLane), revisionID: row.revisionID, isAtNode: true, singleChildID: nil)]
@@ -1004,7 +981,6 @@ private final class GraphBuilder {
         }
     }
 
-
     private func segmentLanes(for segment: Segment, at rowIndex: Int) -> SegmentLanes? {
         guard rows.indices.contains(rowIndex), let current = rows[rowIndex].lane(for: segment) else {
             return nil
@@ -1226,8 +1202,6 @@ private final class GraphBuilder {
         )
     }
 
-
-
     private static func graphParents(
         of commit: Commit,
         visibleIDs: Set<RevisionID>,
@@ -1279,7 +1253,6 @@ private final class GraphBuilder {
         let byte3 = value & 0xFF
         return Int32(bitPattern: byte0 | (byte1 << 8) | (byte2 << 16) | (byte3 << 24))
     }
-
 
     private static func chooseColor(seed: Int32, avoiding forbidden: Set<Int>, count: Int) -> Int {
         var value = seed

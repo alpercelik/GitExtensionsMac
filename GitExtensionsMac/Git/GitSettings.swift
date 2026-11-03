@@ -1,7 +1,6 @@
 import Foundation
 import GitExtensionsCore
 
-
 package struct GitSettingsCheck: Equatable, Sendable {
     package enum Kind: String, Sendable { case git, identity, editor, mergeTool, diffTool }
     package enum Status: Sendable { case valid, warning, invalid }
@@ -78,7 +77,6 @@ package enum GitSettingsChecklist {
         let ambient = ProcessInfo.processInfo.environment.merging(environment, uniquingKeysWith: { _, value in value })
         return [version] + configurationChecks(global: global, effective: effective, environment: ambient, knownTools: tools)
     }
-
 
     package static func locateGit(environment: [String: String] = ProcessInfo.processInfo.environment) async -> URL? {
         let directories = (environment["PATH"] ?? "").split(separator: ":").map(String.init) + ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"]

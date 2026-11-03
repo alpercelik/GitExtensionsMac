@@ -2,7 +2,6 @@ import AppKit
 import GitExtensionsCore
 import GitCommands
 
-
 @MainActor
 final class BlameWindowController: NSWindowController, NSWindowDelegate {
     let blameController = BlameViewController()

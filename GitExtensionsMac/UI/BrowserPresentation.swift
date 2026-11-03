@@ -2,11 +2,9 @@ import Foundation
 import GitCommands
 import GitExtensionsCore
 
-
 @MainActor
 enum BrowserPresentation {
     static let applicationName = "Git Extensions"
-
 
     static func windowTitle(repositoryURL: URL?, branch: String?, pathFilter: String? = nil,
                             fileManager: FileManager = .default) -> String {
@@ -21,7 +19,6 @@ enum BrowserPresentation {
         if !file.isEmpty { return "\"\(file)\" " }
         return (path.hasPrefix("\"") && path.hasSuffix("\"") ? path : "\"\(path)\"") + " "
     }
-
 
     static func repositoryDescription(_ repositoryURL: URL, fileManager: FileManager = .default) -> String {
         do { return try repositoryDescription(repositoryURL, fileManager: fileManager, uninformativePattern: AppSettingsStore.shared.uninformativeRepoNameRegex) }
@@ -73,7 +70,6 @@ enum BrowserPresentation {
         return first
     }
 
-
     static func isValidGitWorkingDir(_ url: URL, fileManager: FileManager = .default) -> Bool {
         if fileManager.fileExists(atPath: url.appendingPathComponent(".git").path) { return true }
         return fileManager.fileExists(atPath: url.appendingPathComponent("HEAD").path)
@@ -82,17 +78,14 @@ enum BrowserPresentation {
     }
 }
 
-
 enum BrowserGitAction: Equatable, Sendable {
     case none, rebase, merge, patch
 
     enum Button: Equatable, Sendable { case resolve, `continue`, abort, more }
 
-
     static func detect(rebase: Bool, merge: Bool, patch: Bool) -> Self {
         rebase ? .rebase : merge ? .merge : patch ? .patch : .none
     }
-
 
     func presentation(hasConflicts: Bool) -> (message: String, buttons: [Button])? {
         let name: String
@@ -109,7 +102,6 @@ enum BrowserGitAction: Equatable, Sendable {
         return (hasConflicts ? "\(name) is currently in progress with merge conflicts." : "\(name) is currently in progress.", buttons)
     }
 }
-
 
 enum BrowserBranchMenu {
     struct Item {

@@ -2,7 +2,7 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
+@MainActor
 final class RevisionDiffViewController: RetainingSplitViewController {
     let mode: FileStatusListMode
     var onScript: ((ScriptDefinition) -> Void)? { didSet { filesController.onScript = onScript } }
@@ -114,7 +114,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         filesItem.holdingPriority = NSLayoutConstraint.Priority(rawValue: 260)
         addSplitViewItem(filesItem)
 
-
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
         viewerContainer.view = container
         for child in [diffController, fileContentController, blameController] as [NSViewController] {
@@ -135,7 +134,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         diffItem.minimumThickness = Self.collapsedDiffPaneThickness
         diffItem.holdingPriority = .defaultLow
         addSplitViewItem(diffItem)
-
 
         if mode == .fileTree { diffController.supportedFileCommands.remove("file.difftool") }
         filesController.canCherryPick = true
@@ -219,7 +217,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         setRetainedPosition(restoredFileListWidth?(primaryLength) ?? 300)
     }
 
-
     func setDiffs(revisions: [Commit], headID: ObjectID?) {
         _ = view
         let previous = filesController.selectedFolder
@@ -229,7 +226,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         filesController.canBlame = blameSource != nil && (headID != nil || revisions.contains { $0.objectID != nil })
         calculate(preferredPaths: [lastExplicitlySelectedPath, fallbackFollowedFile, previous].compactMap { $0 })
     }
-
 
     func refreshArtificial() {
         guard revisions.contains(where: \.isArtificial) else { return }
@@ -272,7 +268,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
                     selectFileOrFolder(path, requestBlame: true)
                 }
 
-
                 for group in groups {
                     for file in group.files where file.isSubmodule {
                         try Task.checkCancellation()
@@ -290,7 +285,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
             }
         }
     }
-
 
     func selectFileOrFolder(_ path: String, requestBlame: Bool? = nil, line: Int? = nil) {
         lastExplicitlySelectedPath = path
@@ -351,7 +345,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         }
         showSelected()
     }
-
 
     private func showSelected() {
         previewGeneration += 1
@@ -432,7 +425,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         }
     }
 
-
     private var effectiveContentProvider: (@Sendable (Commit, RepositoryFileEntry, RepositoryTextEncoding) async throws -> FilePreview<RepositoryFileContent>)? {
         if let contentProvider { return contentProvider }
         guard let source = fileStatusSource as? any RepositoryBrowsingDataSource else { return nil }
@@ -493,7 +485,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         fileContentController.view.isHidden = true
     }
 
-
     private func showFileView(_ item: FileStatusListItem) {
         diffController.previewPresentation.cancel()
         blameController.cancel()
@@ -536,14 +527,13 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         }
     }
 
-
     var supportLinePatching: Bool {
         guard let item = shownItem, let diff = shownDiff else { return false }
         let exists = repositoryURL.map { FileManager.default.fileExists(atPath: $0.appendingPathComponent(item.file.path).path) } ?? false
         return Self.supportsLinePatching(file: item.file, diff: diff, fileExists: exists, isBareRepository: isBareRepository)
     }
 
-    static func supportsLinePatching(file: ChangedFile, diff: FileDiff, fileExists: Bool, isBareRepository: Bool) -> Bool {
+    nonisolated static func supportsLinePatching(file: ChangedFile, diff: FileDiff, fileExists: Bool, isBareRepository: Bool) -> Bool {
         guard !isBareRepository, diff.appearance == .patch else { return false }
         let hasHunks = diff.lines.contains { $0.kind == .header || $0.text.hasPrefix("@@") }
         let isAdded = file.changeType == .added || file.changeType == .copied || !file.isTracked
@@ -556,7 +546,6 @@ final class RevisionDiffViewController: RetainingSplitViewController {
         lastExplicitlySelectedPath = nil
     }
 }
-
 
 enum RevisionDescription {
     static func describe(_ commit: Commit) -> String {

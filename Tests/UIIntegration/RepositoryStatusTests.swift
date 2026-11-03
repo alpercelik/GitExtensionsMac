@@ -302,6 +302,98 @@ extension UIIntegrationTests {
             try await submoduleAndTrackingScenarios(fixture)
         }
 
+        @Test("Browser automatic refresh is status-only") private static func browserAutomaticRefresh() async throws {
+            let fixture = try Fixture()
+            defer { fixture.remove() }
+            let repo = try await fixture.repository("browser")
+            let recorder = RecordingGit(base: fixture.runner)
+            let module = GitRepositoryModule(repositoryURL: repo, git: recorder)
+            let direct = try await module.loadRepositoryState()
+            #expect(
+                direct.revisionChangeURLs.map(\.lastPathComponent) == ["index", "refs"]
+                    && direct.revisionChangeURLs.allSatisfy { $0.path.hasPrefix(repo.appendingPathComponent(".git").path) },
+                "index and refs are the revision-change paths")
+            let browser = RepositoryBrowserViewController(repositoryModule: module)
+            func settle(_ message: String, until condition: () -> Bool) async throws {
+                let deadline = ContinuousClock.now + .seconds(15)
+                while !condition() {
+                    guard ContinuousClock.now < deadline else {
+                        let state = "revisions=\(browser.revisions.count) status=\(String(describing: browser.repositoryStatus?.visualState)) running=\(browser.statusMonitor.isRunning) active=\(browser.statusMonitor.state.active != nil) revisionsChanged=\(browser.statusMonitor.revisionsChanged)"
+                        throw Failure(errorDescription: "\(message) timed out: \(state)")
+                    }
+                    try await Task.sleep(for: .milliseconds(10))
+                }
+            }
+            let window = NSWindow(contentViewController: browser)
+            window.setContentSize(NSSize(width: 1100, height: 800))
+            window.makeKeyAndOrderFront(nil)
+            defer { window.close() }
+            try await settle("initial load") { browser.repositoryStatus != nil && !browser.revisions.isEmpty && browser.statusMonitor.isRunning }
+            try await settle("initial refresh settles") { browser.statusMonitor.state.active == nil }
+            let monitor = browser.statusMonitor
+            let initialRevisions = browser.revisions.map(\.id)
+            func quiesce() async throws {
+                var last = await recorder.commands.count
+                var stableSince = ContinuousClock.now
+                let deadline = ContinuousClock.now + .seconds(15)
+                while ContinuousClock.now - stableSince < .milliseconds(1500) {
+                    guard ContinuousClock.now < deadline else { throw Failure(errorDescription: "git activity did not settle") }
+                    try await Task.sleep(for: .milliseconds(100))
+                    let count = await recorder.commands.count
+                    if count != last { last = count; stableSince = .now }
+                }
+                await recorder.reset()
+            }
+            func isStatus(_ arguments: [String]) -> Bool { arguments.contains("status") }
+
+            try await quiesce()
+            try fixture.write(repo, "tracked.txt", "external edit\n")
+            monitor.changed(interactive: true)
+            try await settle("status refresh after worktree edit") { browser.repositoryStatus?.visualState == .dirty && monitor.state.active == nil }
+            var commands = await recorder.commands
+            #expect(!commands.isEmpty && commands.allSatisfy(isStatus), "worktree edit runs only git status: \(commands)")
+            #expect(browser.revisions.map(\.id) == initialRevisions, "revision grid is untouched")
+            #expect(!monitor.revisionsChanged, "worktree edit does not mark revisions dirty")
+
+            try await fixture.git(["add", "tracked.txt"], in: repo)
+            try await settle("index change marks revisions dirty") { monitor.revisionsChanged }
+            try await quiesce()
+            monitor.changed(interactive: true)
+            try await settle("status refresh after external add") { browser.repositoryStatus?.visualState == .staged && monitor.state.active == nil }
+            commands = await recorder.commands
+            #expect(!commands.isEmpty && commands.allSatisfy(isStatus), "external index change runs only git status: \(commands)")
+            #expect(monitor.revisionsChanged, "dirty indicator persists until revisions are refreshed")
+
+            try await fixture.git(["commit", "-qm", "external"], in: repo)
+            try await settle("external commit keeps revisions dirty") { monitor.revisionsChanged }
+            #expect(browser.revisions.map(\.id) == initialRevisions, "external commit is not loaded until refresh")
+
+            try await quiesce()
+            browser.uiCommands.repositoryChangedNotifier.notify()
+            try await settle("in-app change reloads revisions") { browser.revisions.count == initialRevisions.count + 1 && monitor.state.active == nil }
+            commands = await recorder.commands
+            #expect(commands.contains { $0.contains("for-each-ref") }, "in-app change performs full repository reload: \(commands)")
+            #expect(!monitor.revisionsChanged, "revision refresh clears dirty indicator")
+            #expect(browser.repositoryStatus?.visualState == .clean, "reloaded status")
+        }
+
+        private actor RecordingGit: GitCommandRunning {
+            let base: IsolatedGit
+            private(set) var commands: [[String]] = []
+            init(base: IsolatedGit) { self.base = base }
+            func reset() { commands = [] }
+            func run(arguments: [String], in directory: URL, standardInput: Data?, environment: [String: String]) async throws -> GitCommandResult {
+                commands.append(arguments)
+                return try await base.run(arguments: arguments, in: directory, standardInput: standardInput, environment: environment)
+            }
+            func runStreaming(arguments: [String], in directory: URL, standardInput: Data?, environment: [String: String], output: @escaping GitOutputHandler)
+                async throws -> GitCommandResult
+            {
+                commands.append(arguments)
+                return try await base.runStreaming(arguments: arguments, in: directory, standardInput: standardInput, environment: environment, output: output)
+            }
+        }
+
         private static func submoduleAndTrackingScenarios(_ fixture: Fixture) async throws {
             let root = try await fixture.repository("superproject")
             let child = try await fixture.repository("child-source")

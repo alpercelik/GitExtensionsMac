@@ -2,7 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
 struct FileStatusListItem: Hashable {
     let group: FileStatusGroup
     let file: ChangedFile
@@ -17,7 +16,6 @@ struct FileStatusListItem: Hashable {
         hasher.combine(file.id)
     }
 }
-
 
 struct RememberedDiffFile: Equatable {
     let path: String
@@ -38,7 +36,6 @@ struct RememberedDiffFile: Equatable {
         isSubmodule = item.file.isSubmodule
     }
 
-
     init?(firstOf item: FileStatusListItem) {
         guard let first = item.first else { return nil }
         path = item.file.oldPath ?? item.file.path
@@ -50,7 +47,6 @@ struct RememberedDiffFile: Equatable {
         isSubmodule = item.file.isSubmodule
     }
 
-
     func canUseAsSecond(secondRevision: Bool) -> Bool { !isSubmodule && (secondRevision ? !isDeleted : !isNew) }
     func canUseAsFirst(secondRevision: Bool) -> Bool {
         canUseAsSecond(secondRevision: secondRevision) && (secondRevision ? second : first) != .workingDirectory
@@ -58,12 +54,10 @@ struct RememberedDiffFile: Equatable {
     var canUseAsFirst: Bool { canUseAsFirst(secondRevision: false) || canUseAsFirst(secondRevision: true) }
     var canUseAsSecond: Bool { canUseAsSecond(secondRevision: false) || canUseAsSecond(secondRevision: true) }
 
-
     func side(secondRevision: Bool) -> (revision: RevisionID?, path: String) {
         (secondRevision ? second : first, !secondRevision ? (oldPath ?? path) : path)
     }
 }
-
 
 struct FileStatusListCommand {
     let identifier: String
@@ -108,12 +102,10 @@ private final class FileStatusOutlineView: NSOutlineView {
     }
 }
 
-
 final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate, NSComboBoxDelegate {
 
     var onSelection: ((ChangedFile) -> Void)?
     var isBareRepository = false
-
 
     let mode: FileStatusListMode
     var onScript: ((ScriptDefinition) -> Void)?
@@ -148,7 +140,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
     }
     var canAutoRefresh = true { didSet { updateToolbar() } }
     var canUseFindInCommitFilesGitGrep: Bool { supportsFindInCommitFilesGitGrep && mode != .plain }
-
 
     private(set) var showsUntrackedFiles = true
     private(set) var showsSkipWorktreeFiles = false
@@ -207,7 +198,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
     var isLoading = false
     private var pendingFindFile = false
 
-
     private var plainFiles: [ChangedFile] = []
     private var plainSections: [ChangedFileSection]?
     private var plainTitle = "Diff with parent"
@@ -226,8 +216,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         change(&value)
         AppSettingsStore.shared.saveFileStatusListPreferences(value)
     }
-
-
 
     override func loadView() {
         let root = NSView()
@@ -336,8 +324,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         updateToolbar()
     }
 
-
-
     private func buildToolbar() {
         var items: [(String, String, NSView)] = []
         let collapse = AppKitFactory.resourceButton("CollapseAll", tooltip: "Collapse all groups, otherwise expand the selected group", target: self, action: #selector(collapseGroups))
@@ -402,12 +388,10 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         name == "btnSettings" ? .mustHold : NSStackView.VisibilityPriority(rawValue: 900 - Float(index) * 10)
     }
 
-
     func isToolbarItemVisible(_ name: String) -> Bool {
         guard let view = toolbarItems.first(where: { $0.name == name })?.view else { return false }
         return toolbarStack.visibilityPriority(for: view) != .notVisible
     }
-
 
     private func updateToolbar() {
         guard isViewLoaded, mode != .fileTree else { return }
@@ -535,8 +519,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         return button
     }
 
-
-
     private func makeGrepButton() -> NSView {
         let stack = NSStackView()
         stack.orientation = .horizontal
@@ -601,7 +583,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
 
     @objc private func toggleGrepButton() { toggleGrep(fromButton: true) }
 
-
     private func toggleGrep(fromButton: Bool) {
         let type = preferences.findInFilesGitGrepTypeIndex
         let usingInputBox = type != 0
@@ -628,7 +609,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         }
     }
 
-
     func showGrepDialog(text: String) {
         guard canUseFindInCommitFilesGitGrep, let owner = view.window else { return }
         let window = grepWindow ?? FindInCommitFilesGitGrepWindowController(
@@ -647,7 +627,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
     }
 
     private func runGrep() { setGrep(grepBox.stringValue, delay: 0) }
-
 
     private func setGrep(_ text: String, delay: UInt64) {
         grepTask?.cancel()
@@ -669,9 +648,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
 
     private static let activeInputColor = NSColor.systemYellow.withAlphaComponent(0.25)
 
-
-
-
     @objc private func editGitIgnore() { perform("file.editGitIgnore") }
     @objc private func editLocallyIgnoredFiles() { perform("file.editLocallyIgnored") }
 
@@ -681,7 +657,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         settingsMenu = button.menu
         return button
     }
-
 
     private func populateSettingsMenu(_ menu: NSMenu) {
         while menu.items.count > 1 { menu.removeItem(at: 1) }
@@ -784,9 +759,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         return button
     }
 
-
-
-
     func apply(files: [ChangedFile], scope: ChangedFileSelectionScope, comparisonTitle: String) {
         let selectedIDs = selectedFileIDs()
         selectionScope = scope
@@ -797,7 +769,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         reloadNodes(preferredIDs: selectedIDs, causedByFilter: true)
     }
 
-
     func apply(sections: [ChangedFileSection], scope: ChangedFileSelectionScope) {
         let selectedIDs = selectedFileIDs()
         selectionScope = scope
@@ -807,7 +778,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         revisions = []
         reloadNodes(preferredIDs: selectedIDs, causedByFilter: true)
     }
-
 
     func apply(groups: [FileStatusGroup], revisions: [RevisionID], preferredPaths: [String] = []) {
         submoduleStatuses.removeAll()
@@ -846,11 +816,9 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
     var allItems: [FileStatusListItem] { groups.flatMap { group in group.files.map { FileStatusListItem(group: group, file: $0) } } }
     var firstGroupItems: [FileStatusListItem] { groups.first.map { group in group.files.map { FileStatusListItem(group: group, file: $0) } } ?? [] }
 
-
     func selectedItems() -> [FileStatusListItem] {
         selectedNodeFiles().compactMap { itemsByNodeFileID[$0.id] }
     }
-
 
     var selectedFolder: String? {
         let nodes = outlineView.selectedRowIndexes.compactMap { outlineView.item(atRow: $0) as? ChangedFileNode }
@@ -864,7 +832,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
     }
 
     func focusList() { view.window?.makeFirstResponder(outlineView) }
-
 
     @discardableResult
     func selectFileOrFolder(_ path: String, firstGroupOnly: Bool = false, notify: Bool = true) -> Bool {
@@ -908,8 +875,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         filterBox.stringValue = value
         applyFilterText(value)
     }
-
-
 
     private func reloadNodes(preferredIDs: Set<String>, causedByFilter: Bool, preferredPaths: [String] = []) {
         guard isViewLoaded else { _ = view; return reloadNodes(preferredIDs: preferredIDs, causedByFilter: causedByFilter, preferredPaths: preferredPaths) }
@@ -958,7 +923,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
             selectFirstVisibleItem()
         }
     }
-
 
     @discardableResult
     func selectNextSearchFile(forward: Bool) -> Bool {
@@ -1093,7 +1057,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         return node
     }
 
-
     static func groupImageName(_ group: FileStatusGroup) -> String {
         switch group.kind {
         case .diff: "Diff"
@@ -1104,7 +1067,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         case .grep: "ViewFile"
         }
     }
-
 
     static func imageName(for file: ChangedFile, isGrep: Bool) -> String {
         if file.isStatusOnly && !file.isRangeDiff { return file.id == noChangesItem.id ? "FileStatusCopiedSame" : "FileStatusUnknown" }
@@ -1132,8 +1094,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         return "FileStatusUnknown"
     }
 
-
-
     func controlTextDidChange(_ obj: Notification) {
         guard let box = obj.object as? NSComboBox else { return }
         if box === filterBox {
@@ -1157,7 +1117,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
             else if box === grepBox { setGrep(grepBox.stringValue, delay: 0) }
         }
     }
-
 
     private func applyFilterText(_ text: String) {
         let path = repositoryURL.map { $0.path.hasSuffix("/") ? $0.path : $0.path + "/" }
@@ -1187,7 +1146,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         }
     }
 
-
     private func isFilterMatch(_ file: ChangedFile) -> Bool {
         if file.isRangeDiff { return true }
         if file.diffStatus != .unknown, !diffStatusFilter.contains(file.diffStatus) { return false }
@@ -1196,8 +1154,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
             filter.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)) != nil
         }
     }
-
-
 
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
         (item as? ChangedFileNode)?.children.count ?? rootNodes.count
@@ -1214,7 +1170,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
     func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
         GitExtensionsSelectionRowView()
     }
-
 
     func outlineView(_ outlineView: NSOutlineView, pasteboardWriterForItem item: Any) -> (any NSPasteboardWriting)? {
         guard let file = (item as? ChangedFileNode)?.file, !file.isStatusOnly, let repositoryURL else { return nil }
@@ -1256,7 +1211,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         }
     }
 
-
     @objc private func collapseGroups() {
         var collapsed = false
         func collapseGroupKeys(_ nodes: [ChangedFileNode]) {
@@ -1286,8 +1240,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         }
     }
 
-
-
     func menuNeedsUpdate(_ menu: NSMenu) {
         if menu === grepMenu { populateGrepMenu(menu); return }
         if menu === settingsMenu { populateSettingsMenu(menu); return }
@@ -1298,7 +1250,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         if row >= 0, let file = (outlineView.item(atRow: row) as? ChangedFileNode)?.file { focusedFileID = file.id }
         populateFileMenu(menu)
     }
-
 
     func menuContext() -> ChangedFileContextMenuContext {
         if mode == .plain {
@@ -1482,7 +1433,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         }
     }
 
-
     static func userScriptItems(_ scripts: [ScriptDefinition], target: AnyObject?, action: Selector?) -> [NSMenuItem] {
         guard !scripts.isEmpty else { return [] }
         let host = NSMenuItem(title: "Run script", action: nil, keyEquivalent: "")
@@ -1525,7 +1475,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         guard let id = sender.identifier?.rawValue else { return }
         perform(id)
     }
-
 
     func perform(_ identifier: String) {
         var id = identifier
@@ -1575,7 +1524,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
                                          lineNumber: ["file.edit.local", "file.blame"].contains(id) ? currentLineNumber() : nil))
     }
 
-
     private func performShortcut(_ command: String) -> Bool {
         guard mode != .plain else { return false }
         switch command {
@@ -1600,7 +1548,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         }
     }
 
-
     @discardableResult
     func performIfEnabled(_ command: String) -> Bool {
         let menu = NSMenu()
@@ -1616,7 +1563,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
     }
-
 
     private func findFile() {
         guard !isLoading else { pendingFindFile = true; return }
@@ -1680,7 +1626,6 @@ final class ChangedFilesViewController: NSViewController, NSOutlineViewDelegate,
 
     private func selectedFileIDs() -> Set<String> { Set(selectedNodeFiles().map(\.id)) }
 }
-
 
 enum FileSearchWindow {
 
@@ -1817,7 +1762,6 @@ enum FileSearchWindow {
         func windowShouldClose(_ sender: NSWindow) -> Bool { close(nil); return true }
     }
 }
-
 
 final class FindInCommitFilesGitGrepWindowController: NSWindowController, NSWindowDelegate, NSTextFieldDelegate {
     private let locate: (String) -> Void

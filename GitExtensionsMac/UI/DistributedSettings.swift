@@ -89,8 +89,6 @@ struct DistributedSettings {
             .filter { !store.unsetDetailedSettingKeys.contains($0.key) }
     }
 
-
-
     static func detailedDefaults(_ values: [String: String]) -> [String: String] {
         var result = values
         for key in [remoteBranches, mergeLog] {
@@ -99,8 +97,6 @@ struct DistributedSettings {
         result[mergeLogCount] = values[mergeLogCount].flatMap(normalizedMergeLogCount) ?? "20"
         return result
     }
-
-
 
     func effectiveWriteScope(key: String, value: String?, global: [String: String]) throws -> DistributedSettingsScope? {
         guard try values(.effective, global: global)[key] != value else { return nil }

@@ -507,7 +507,7 @@ private final class PatchViewController: NSViewController, NSTableViewDataSource
         transcript.string = ""
         completedApply = false
         showsInitialRecoveryState = false
-        operation = Task {
+        operation = Task { [self] in
             do {
                 let result = try await OutputHistoryRecording.perform {
                     try await action { [weak self] event in

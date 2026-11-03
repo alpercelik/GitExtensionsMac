@@ -2,8 +2,6 @@ import GitExtensionsCore
 import GitCommands
 import AppKit
 
-
-
 @MainActor
 final class BlameViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
 
@@ -67,7 +65,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
     private var occurrences = FileViewerOccurrences()
     private var syntaxEnabled = AppSettingsStore.shared.preferencesForNewFileViewer().showsSyntaxHighlighting
     var onSelectedCommit: ((BlameCommit) -> Void)?
-
 
     static let ageBucketColors: [NSColor] = [(247, 252, 245), (199, 233, 192), (161, 217, 155), (116, 196, 118), (65, 171, 93), (35, 139, 69), (0, 68, 27)]
         .map { red, green, blue in
@@ -237,7 +234,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         }
     }
 
-
     private func preferencesChanged() {
         let line = currentFileLine
         rebuildColumns()
@@ -289,8 +285,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         synchronizing = false
     }
 
-
-
     var currentFileLine: Int { table.selectedRow >= 0 ? table.selectedRow + 1 : 1 }
 
     func cancel() {
@@ -299,7 +293,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         loadTask?.cancel()
         isLoading = false
     }
-
 
     func load(revision: ObjectID, file: String, encoding: RepositoryTextEncoding, initialLine: Int? = nil, force: Bool = false) {
         _ = view
@@ -401,7 +394,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         reloadLines()
         goToLine(min(line, result.lines.count))
 
-
         lastBlameLine = nil
         clickedBlameLine = nil
         blameID = revision
@@ -412,7 +404,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         table.selectRowIndexes(IndexSet(integer: line - 1), byExtendingSelection: false)
         table.scrollRowToVisible(line - 1)
     }
-
 
     static func gutter(_ blame: BlameResult, fileName: String, preferences: BlamePreferences) -> [String] {
         let formatter = DateFormatter()
@@ -430,7 +421,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         }
     }
 
-
     static func authorLine(_ commit: BlameCommit, fileName: String, preferences: BlamePreferences, formatter: DateFormatter) -> String {
         var text = ""
         if preferences.showAuthor && preferences.displayAuthorFirst {
@@ -446,7 +436,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         return text
     }
 
-
     static func ageBuckets(_ dates: [Date], now: Date) -> [Int] {
         let boundary = Calendar.current.date(byAdding: .year, value: -3, to: now) ?? now
         let oldest = min(boundary, dates.filter { $0 != .distantPast }.min() ?? boundary)
@@ -456,8 +445,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
             return min(Int(relative / interval), ageBucketColors.count - 1)
         }
     }
-
-
 
     func numberOfRows(in tableView: NSTableView) -> Int {
         guard let blame, !blame.lines.isEmpty else { return 0 }
@@ -545,7 +532,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         return blame.lines[row].commit === highlightedCommit
     }
 
-
     func tableViewSelectionDidChange(_ notification: Notification) {
         guard !synchronizing else { return }
         synchronizing = true
@@ -562,7 +548,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         if !isLoading, previous !== line.commit { onSelectedCommit?(line.commit) }
     }
 
-
     func hover(row: Int?) {
         let commit = row.flatMap { row in blame?.lines.indices.contains(row) == true ? blame?.lines[row].commit : nil }
         guard commit !== highlightedCommit else { return }
@@ -575,16 +560,12 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         }
     }
 
-
-
-
     @objc private func doubleClicked(_ sender: NSTableView) {
         guard sender === authorTable, sender.clickedRow >= 0,
               let line = lastBlameLine ?? blame?.lines[safe: sender.clickedRow] else { return }
         guard context?.revisionInGrid(line.commit.objectID) != nil else { return }
         blameRevision(line.commit.objectID, fileName: line.commit.fileName, line: line)
     }
-
 
     func blameRevision(_ commit: ObjectID, fileName: String, line: BlameLine) {
         clickedBlameLine = line
@@ -593,8 +574,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
             RevisionGridMessages.revisionFilteredInGrid(.object(commit))
         }
     }
-
-
 
     private var fileLines: [DiffLine] {
         (blame?.lines ?? []).map { DiffLine(id: String($0.finalLineNumber), oldLineNumber: nil,
@@ -722,7 +701,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         return menu
     }
 
-
     func previousRevision(of commit: BlameCommit) -> (target: ObjectID?, actual: Bool, revision: ObjectID?) {
         guard let context, let revision = context.revisionInGrid(commit.objectID) else { return (nil, false, nil) }
         if let actual = actualParents[commit.objectID]?.first, context.revisionInGrid(actual) != nil {
@@ -741,7 +719,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
               let line = lastBlameLine ?? blame?.lines[safe: menuRow] else { return }
         blameRevision(commit.objectID, fileName: commit.fileName, line: line)
     }
-
 
     @objc private func blamePreviousRevision() {
         guard let commit = menuCommit, let source else { return }
@@ -769,7 +746,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
     @objc private func copyAll() { if let commit = menuCommit { copy(commit.description(dateFormatter: Self.tooltipFormatter)) } }
     @objc private func showChanges() { if let commit = menuCommit { onShowChanges?(commit.objectID) } }
 
-
     @objc private func viewInHost(_ sender: NSMenuItem) {
         guard let identity = sender.representedObject as? HostedRepositoryIdentity, let blameID, let fileName,
               let url = identity.blameURL(commit: blameID, file: fileName, line: max(menuRow, 0) + 1) else { return }
@@ -780,7 +756,6 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
 private extension Array {
     subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }
-
 
 final class BlameTableView: NSTableView {
     var onHover: ((Int?) -> Void)?
@@ -822,7 +797,6 @@ final class BlameTableView: NSTableView {
     }
 }
 
-
 final class BlameRowView: NSTableRowView {
     var isCommitHighlighted = false { didSet { if oldValue != isCommitHighlighted { needsDisplay = true } } }
     override func drawBackground(in dirtyRect: NSRect) {
@@ -832,7 +806,6 @@ final class BlameRowView: NSTableRowView {
         bounds.fill()
     }
 }
-
 
 final class BlameMarginCell: NSView {
     var color: NSColor = .clear { didSet { needsDisplay = true } }

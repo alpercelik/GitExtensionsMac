@@ -167,6 +167,7 @@ extension UIIntegrationTests {
             return window.performKeyEquivalent(with: event)
         }
 
+        @MainActor
         private static func wait(_ message: String, _ condition: () -> Bool) async throws {
             let deadline = ContinuousClock.now + .seconds(15)
             while !condition() {
