@@ -14,20 +14,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  build:
+    name: Build (Release)
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
       - name: Show Xcode version
         run: xcodebuild -version
-
-      - name: Configure Git
-        run: |
-          git config --global user.name "CI"
-          git config --global user.email "ci@example.com"
-          git config --global init.defaultBranch main
 
       - name: Build app (Release)
         run: |
@@ -41,11 +36,42 @@ jobs:
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Package app
+        run: |
+          app=.build/DerivedData/Build/Products/Release/GitExtensionsMac.app
+          codesign --force --deep --sign - "$app"
+          ditto -c -k --keepParent "$app" GitExtensionsMac.zip
+
+      - name: Upload app
+        uses: actions/upload-artifact@v5
+        with:
+          name: GitExtensionsMac-${{ github.sha }}
+          path: GitExtensionsMac.zip
+          retention-days: 7
+
+  test:
+    name: Test
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "CI"
+          git config --global user.email "ci@example.com"
+          git config --global init.defaultBranch main
+
       - name: Test
+        run: |
+          export TEST_BUILD_JOBS="$(sysctl -n hw.ncpu)"
+          Scripts/test.sh all -skipPackagePluginValidation -skipMacroValidation
         env:
           TEST_DERIVED_DATA: .build/DerivedData
           TEST_RESULTS_DIR: .build/test-results
-        run: Scripts/test.sh all -skipPackagePluginValidation -skipMacroValidation
 
       - name: Upload test results
         if: failure()
