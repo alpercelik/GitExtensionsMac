@@ -38,33 +38,51 @@ extension UIIntegrationTests {
                     }
                 }
             }
-            for name in ["Graph", "Avatar", "Commit ID"] where !column(name).isHidden {
+            for name in ["Graph", "Avatar"] where !column(name).isHidden {
                 #expect(table.columnResizeIndex(at: edge(name)) == nil, "columns: \(name) right boundary is not user-resizable")
             }
+            #expect(table.columnResizeIndex(at: edge("Commit ID")) == index("Commit ID"), "columns: the last resizable column's right boundary is resizable")
             #expect(table.columnResizeIndex(at: NSPoint(x: edge("Author Name").x + 10, y: edge("Author Name").y)) == nil, "columns: hot zone is bounded")
             #expect(
                 column("Commit ID").maxWidth == RevisionGridViewController.commitIDMaximumWidth()
                     && column("Author Name").maxWidth > 1_000 && column("Date").maxWidth > 1_000,
                 "columns: only Commit ID is capped, at the full object ID width")
+            func total() -> CGFloat { table.tableColumns.filter { !$0.isHidden }.reduce(0) { $0 + $1.width } }
             let message = column("Message").width
             let author = column("Author Name").width
             let commit = column("Commit ID").width
+            let filled = total()
             drag("Author Name", by: -40)
             #expect(
-                column("Author Name").width == author - 40 && column("Message").width == message && column("Commit ID").width == commit + 40,
-                "columns: resizing keeps Message fixed and the last resizable column absorbs the change")
+                column("Author Name").width == author - 40 && column("Message").width == message + 40 && column("Commit ID").width == commit
+                    && abs(total() - filled) < 1,
+                "columns: resizing a column changes only that column while Message fills the remaining width")
+            drag("Commit ID", by: 30)
+            #expect(column("Commit ID").width == commit + 30 && column("Message").width == message + 10, "columns: the last column's right boundary is resizable")
             drag("Message", by: -30)
-            #expect(column("Message").width == message - 30 && column("Commit ID").width == commit + 70, "columns: Message right boundary is resizable")
-            drag("Date", by: 2_000)
-            let clip = scroll.contentView.bounds.width
-            let total = table.tableColumns.filter { !$0.isHidden }.reduce(0) { $0 + $1.width }
             #expect(
-                column("Commit ID").width == column("Commit ID").minWidth && (abs(total - clip) <= 2 || column("Message").width == column("Message").minWidth),
-                "columns: last column stops at its minimum and Message fills again after release")
+                column("Message").width == message - 20 && column("Commit ID").width == commit + 30 && grid.isMessageWidthPinned,
+                "columns: a resized Message keeps the user's width")
+            drag("Date", by: 2_000)
+            #expect(
+                column("Message").width == message - 20 && column("Commit ID").width == commit + 30 && total() > scroll.contentView.bounds.width,
+                "columns: widening past the window keeps every user width and scrolls horizontally")
+            drag("Date", by: -2_000)
             window.setContentSize(NSSize(width: 300, height: 300))
             scroll.layoutSubtreeIfNeeded()
             grid.fitMessageColumn()
-            #expect(column("Message").width == column("Message").minWidth, "columns: narrowing the window shrinks only Message down to its minimum")
+            #expect(column("Message").width == message - 20, "columns: a pinned Message keeps its width when the window narrows")
+            window.setContentSize(NSSize(width: 900, height: 300))
+            scroll.layoutSubtreeIfNeeded()
+            grid.fitMessageColumn()
+            let shown = table.tableColumns.indices.filter { !table.tableColumns[$0].isHidden }
+            let gap = scroll.contentView.bounds.width - table.rect(ofColumn: shown.last!).maxX - table.rect(ofColumn: shown.first!).minX
+            drag("Message", by: gap - 4)
+            #expect(!grid.isMessageWidthPinned && abs(total() - filled) < 2, "columns: dragging Message back to the edge fills the row again")
+            window.setContentSize(NSSize(width: 300, height: 300))
+            scroll.layoutSubtreeIfNeeded()
+            grid.fitMessageColumn()
+            #expect(column("Message").width == column("Message").minWidth, "columns: narrowing the window shrinks only a filling Message down to its minimum")
             window.setContentSize(NSSize(width: 900, height: 300))
             scroll.layoutSubtreeIfNeeded()
             grid.fitMessageColumn()

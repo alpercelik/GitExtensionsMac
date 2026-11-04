@@ -176,8 +176,8 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         addColumn(Self.buildColumn, width: 150, min: 16, max: 100_000, resizable: true)
         applyBuildStatusColumnSettings()
         tableView.action = #selector(gridClicked)
-        tableView.columnResizeChanged = { [weak self] in self?.fillLastResizableColumn() }
-        tableView.columnResizeEnded = { [weak self] in self?.fitMessageColumn() }
+        tableView.columnResizeChanged = { [weak self] column in self?.columnResizing(column) }
+        tableView.columnResizeEnded = { [weak self] column in self?.finishColumnResize(column) }
 
         let menu = NSMenu()
         menu.delegate = self
@@ -278,7 +278,8 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         let icon = AppSettingsStore.shared.showBuildStatusIconColumn, text = AppSettingsStore.shared.showBuildStatusTextColumn
         column.isHidden = !(buildColumnEnabled && (icon || text))
         column.resizingMask = text ? .userResizingMask : []
-        if icon && !text { column.width = 16 } else if text && column.width == 16 { column.width = 150 }
+        let iconWidth = Self.buildStatusIconColumnWidth()
+        if icon && !text { column.width = iconWidth } else if text && column.width == iconWidth { column.width = 150 }
         fitMessageColumn()
         tableView.reloadData()
     }
@@ -304,6 +305,12 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         case .unstable: .systemOrange
         case .stopped: .systemGray
         }
+    }
+    static func buildStatusIconColumnWidth() -> CGFloat {
+        let font = AppSettingsStore.shared.fontPreferences.font(.monospace, fallback: .monospacedSystemFont(ofSize: 10.5, weight: .regular))
+        let widest = [BuildStatus.success, .failure, .inProgress, .stopped, .unstable, .unknown]
+            .map { ($0.symbol as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0
+        return max(16, ceil(widest) + 8)
     }
     static func buildStatusText(_ info: BuildInfo, icon: Bool, text: Bool) -> String {
         (icon ? info.status.symbol : "") + (text ? info.description ?? "" : "")
@@ -812,18 +819,35 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         return ceil((String(repeating: "1", count: 40) as NSString).size(withAttributes: [.font: font]).width) + 8
     }
 
-    func fillLastResizableColumn() {
-        guard let column = tableView.lastVisibleResizableColumn else { return }
-        fill(column)
-    }
+    private(set) var isMessageWidthPinned = false
+    static let messageFillSnapDistance: CGFloat = 8
 
     func fitMessageColumn() {
-        guard !tableView.isTrackingColumnResize, let message = tableView.tableColumn(withIdentifier: .init("Message")) else { return }
+        guard !tableView.isTrackingColumnResize, !isMessageWidthPinned,
+              let message = tableView.tableColumn(withIdentifier: .init("Message")) else { return }
         fill(message)
     }
 
-    private func fill(_ message: NSTableColumn) {
-        guard let clipWidth = tableView.enclosingScrollView?.contentView.bounds.width, clipWidth > 0 else { return }
+    private func columnResizing(_ column: NSTableColumn) {
+        guard column.identifier.rawValue != "Message", !isMessageWidthPinned,
+              let message = tableView.tableColumn(withIdentifier: .init("Message")) else { return }
+        fill(message)
+    }
+
+    private func finishColumnResize(_ column: NSTableColumn) {
+        if column.identifier.rawValue == "Message", let width = fillWidth(column) {
+            isMessageWidthPinned = abs(column.width - width) > Self.messageFillSnapDistance
+        }
+        fitMessageColumn()
+    }
+
+    private func fill(_ column: NSTableColumn) {
+        guard let width = fillWidth(column) else { return }
+        if abs(column.width - width) >= 0.5 { column.width = width }
+    }
+
+    private func fillWidth(_ message: NSTableColumn) -> CGFloat? {
+        guard let clipWidth = tableView.enclosingScrollView?.contentView.bounds.width, clipWidth > 0 else { return nil }
         let visible = tableView.tableColumns.filter { !$0.isHidden }
         let others = visible.filter { $0 !== message }.reduce(0) { $0 + $1.width }
         let rects = tableView.tableColumns.enumerated().filter { !$0.element.isHidden }.map {
@@ -831,8 +855,7 @@ final class RevisionGridViewController: NSViewController, NSTableViewDataSource,
         }
         let inset = max(0, rects.first?.rect.minX ?? 0)
         let padding = rects.reduce(0) { $0 + max(0, $1.rect.width - $1.column.width) }
-        let width = max(message.minWidth, floor(clipWidth - others - inset * 2 - padding - tableView.intercellSpacing.width * CGFloat(visible.count)))
-        if abs(message.width - width) >= 0.5 { message.width = width }
+        return max(message.minWidth, floor(clipWidth - others - inset * 2 - padding - tableView.intercellSpacing.width * CGFloat(visible.count)))
     }
     var messageColumnWidth: CGFloat { tableView.tableColumn(withIdentifier: .init("Message"))?.width ?? 0 }
 
@@ -1816,29 +1839,23 @@ final class RevisionTableView: NSTableView {
     }
     var userInteracted: (() -> Void)?
 
-    var columnResizeChanged: (() -> Void)?
-    var columnResizeEnded: (() -> Void)?
+    var columnResizeChanged: ((NSTableColumn) -> Void)?
+    var columnResizeEnded: ((NSTableColumn) -> Void)?
     private(set) var isTrackingColumnResize = false
     static let columnSizingHotZone: CGFloat = 3
 
-    var lastVisibleResizableColumn: NSTableColumn? {
-        tableColumns.last { !$0.isHidden && $0.resizingMask.contains(.userResizingMask) }
-    }
-
     func columnResizeIndex(at point: NSPoint) -> Int? {
-        let last = lastVisibleResizableColumn
-        return tableColumns.indices.first { index in
+        tableColumns.indices.first { index in
             let column = tableColumns[index]
-            guard !column.isHidden, column.resizingMask.contains(.userResizingMask), column !== last else { return false }
+            guard !column.isHidden, column.resizingMask.contains(.userResizingMask) else { return false }
             return abs(point.x - rect(ofColumn: index).maxX) <= Self.columnSizingHotZone
         }
     }
 
     override func resetCursorRects() {
         super.resetCursorRects()
-        let last = lastVisibleResizableColumn
         for (index, column) in tableColumns.enumerated()
-        where !column.isHidden && column.resizingMask.contains(.userResizingMask) && column !== last {
+        where !column.isHidden && column.resizingMask.contains(.userResizingMask) {
             let edge = rect(ofColumn: index).maxX
             addCursorRect(NSRect(x: edge - Self.columnSizingHotZone, y: bounds.minY, width: Self.columnSizingHotZone * 2, height: bounds.height), cursor: .resizeLeftRight)
         }
@@ -1850,13 +1867,13 @@ final class RevisionTableView: NSTableView {
         isTrackingColumnResize = true
         defer {
             isTrackingColumnResize = false
-            columnResizeEnded?()
+            columnResizeEnded?(column)
             window?.invalidateCursorRects(for: self)
         }
         events { event in
             let x = convert(event.locationInWindow, from: nil).x
             column.width = initial + x - start.x
-            columnResizeChanged?()
+            columnResizeChanged?(column)
             return event.type != .leftMouseUp
         }
     }

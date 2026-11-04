@@ -15,7 +15,7 @@ Beta. Expect bugs, incomplete features, and UI differences from Git Extensions w
 
 ## Requirements
 
-- macOS 13 or later
+- macOS 14 or later
 - Git available on your `PATH`
 - Xcode 27 to build from source
 

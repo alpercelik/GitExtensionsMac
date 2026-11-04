@@ -247,7 +247,11 @@ extension UIIntegrationTests {
             defer { window.close() }
             view.apply(name: "A", email: "a@test")
             view.apply(name: "B", email: "b@test")
-            try await Task.sleep(for: .milliseconds(120))
+            let loadDeadline = ContinuousClock.now + .seconds(5)
+            while !(view.hasProviderImage && view.providerImageSize?.width == 16), ContinuousClock.now < loadDeadline {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            try await Task.sleep(for: .milliseconds(60))
             #expect(view.hasProviderImage, "shared view receives async provider image")
             #expect(view.providerImageSize?.width == 16, "a stale author response cannot replace the latest author")
             let event = NSEvent.mouseEvent(
@@ -258,7 +262,8 @@ extension UIIntegrationTests {
             #expect(menu.items[1].submenu!.items.first { $0.title == "Custom" }?.state == .on)
             uiPrefs.provider = .none
             AppSettingsStore.shared.saveAvatarPreferences(uiPrefs)
-            try await Task.sleep(for: .milliseconds(80))
+            let clearDeadline = ContinuousClock.now + .seconds(5)
+            while view.hasProviderImage, ContinuousClock.now < clearDeadline { try await Task.sleep(for: .milliseconds(20)) }
             #expect(!view.hasProviderImage, "live changes restore initials")
         }
     }
