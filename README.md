@@ -19,6 +19,18 @@ Beta. Expect bugs, incomplete features, and UI differences from Git Extensions w
 - Git available on your `PATH`
 - Xcode 27 to build from source
 
+## Installing
+
+Download the latest build from [Releases](https://github.com/norgera/GitExtensionsMac/releases), unzip it, and move `GitExtensionsMac.app` to `/Applications`.
+
+Beta builds are not signed with an Apple Developer ID or notarized, so macOS blocks the app on first launch and may say it is damaged. To allow it, remove the quarantine attribute:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/GitExtensionsMac.app
+```
+
+Alternatively, try to open the app once, then choose **Open Anyway** in **System Settings > Privacy & Security**.
+
 ## Building
 
 ```sh

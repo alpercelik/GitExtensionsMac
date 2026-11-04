@@ -269,7 +269,7 @@ extension UIIntegrationTests {
             #expect(UserEnvironmentInformation.gitVersionInfo("2.50.1") == "2.50.1 (recommended: 2.53.0 or later)", "environment: supported git")
             #expect(UserEnvironmentInformation.gitVersionInfo("2.53.0") == "2.53.0", "environment: recommended git")
             let text = UserEnvironmentInformation.information(gitVersion: "2.53.0")
-            #expect(text.hasPrefix("- Git Extensions ") && text.contains("\n- Git 2.53.0\n"), "environment: block \(text)")
+            #expect(text.hasPrefix("- GitExtensionsMac ") && text.contains("\n- Git 2.53.0\n"), "environment: block \(text)")
             #expect(GitExtensionsContributors.all.count > 100 && GitExtensionsContributors.all.contains("Henk Westhuis"), "about: contributors")
             let item = RepositoryHistoryUIService.menuItem(
                 splitter().split([entry("/Users/me/x", .anchoredInTop)]).top[0], number: 10, group: "top", anchored: true)

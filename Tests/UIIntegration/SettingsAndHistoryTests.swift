@@ -641,7 +641,9 @@ extension SettingsAndHistoryTests {
         name.stringValue = "Edited GitHub Code"
         name.delegate?.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: name))
         insert(.azureDevOps)
-        try await Task.sleep(for: .milliseconds(100))
+        try await wait("Azure DevOps templates inserted") {
+            descendants(controller.view).compactMap { $0 as? RevisionLinksSettingsEditor }.first?.definitions.count == 5
+        }
         var response: NSApplication.ModalResponse?
         controller.onClose = { response = $0 }
         descendants(controller.view).compactMap { $0 as? NSButton }.first { $0.title == "OK" }!.performClick(nil)

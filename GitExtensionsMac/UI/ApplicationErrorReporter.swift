@@ -232,7 +232,7 @@ final class ErrorReportWindow: NSWindowController, NSWindowDelegate, NSOutlineVi
         message.maximumNumberOfLines = 3
         root.addArrangedSubview(message); message.widthAnchor.constraint(equalTo: warningRow.widthAnchor).isActive = true
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development"
-        let application = value("Git Extensions [\(version)]")
+        let application = value("GitExtensionsMac [\(version)]")
         let git = value(gitVersion)
         let grid = NSGridView(views: [
             [NSTextField(labelWithString: "Target Site:"), value(content.exception.targetSite ?? ""), NSGridCell.emptyContentView, NSGridCell.emptyContentView],

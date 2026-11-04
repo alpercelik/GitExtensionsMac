@@ -1036,7 +1036,7 @@ enum UserEnvironmentInformation {
         let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "(development)"
         let scale = NSScreen.main?.backingScaleFactor ?? 1
         return """
-        - Git Extensions \(version) (macOS)
+        - GitExtensionsMac \(version)
         - Build \(build)
         - Git \(gitVersionInfo(gitVersion))
         - \(ProcessInfo.processInfo.operatingSystemVersionString)

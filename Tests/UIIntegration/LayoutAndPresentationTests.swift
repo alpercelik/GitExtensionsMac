@@ -337,7 +337,13 @@ extension UIIntegrationTests {
         }
 
         static func duringModal(_ action: @escaping @MainActor () -> Void) {
-            let timer = Timer(timeInterval: 0.05, repeats: false) { _ in MainActor.assumeIsolated { action() } }
+            nonisolated(unsafe) let monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { _ in nil }
+            let timer = Timer(timeInterval: 0.05, repeats: false) { _ in
+                MainActor.assumeIsolated {
+                    action()
+                    if let monitor { NSEvent.removeMonitor(monitor) }
+                }
+            }
             RunLoop.main.add(timer, forMode: .modalPanel)
         }
 
