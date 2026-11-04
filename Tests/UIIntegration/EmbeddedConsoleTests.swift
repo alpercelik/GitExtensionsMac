@@ -193,7 +193,7 @@ extension UIIntegrationTests {
             try await Task.sleep(for: .milliseconds(300))
             #expect(lightness(terminal.nativeBackgroundColor) < 0.3 && terminal.process.shellPid == pid, "a console shown again after a hidden appearance change picks up the new colors")
             try send("stty size; printf '__SIZE__\\n'\r", to: console)
-            try await wait("size after appearance changes") { text(console).contains("__SIZE__") }
+            try await wait("size after appearance changes") { text(console).contains("__SIZE__\n") }
             let size = terminal.getWindowSize()
             #expect(text(console).contains("\(size.ws_row) \(size.ws_col)"), "terminal size is unchanged by appearance changes")
         }

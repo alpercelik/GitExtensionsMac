@@ -328,11 +328,12 @@ extension UIIntegrationTests {
             #expect(["Staged", "0/1", "Ln", "Col"].allSatisfy(labels().contains), "upstream status strip items")
             #expect(!labels().contains { $0.contains("unstaged") && $0.contains("staged /") }, "no combined Mac status summary")
             let width = SplitterManager.distance(of: main)
+            let messageHeight = right.arrangedSubviews[1].frame.height
             commit.setContentSize(NSSize(width: commit.contentLayoutRect.width + 200, height: commit.contentLayoutRect.height + 100))
             commit.contentView!.layoutSubtreeIfNeeded()
             #expect(SplitterManager.distance(of: main) == width, "file pane keeps its width when the window grows")
             #expect(
-                abs(right.arrangedSubviews[1].frame.height - (SplitterManager.size(of: right) - 426 - 100 - right.dividerThickness)) < 1,
+                abs(right.arrangedSubviews[1].frame.height - messageHeight) < 1,
                 "commit message pane keeps its height when the window grows \(right.arrangedSubviews[1].frame.height) \(SplitterManager.size(of: right))")
         }
 
