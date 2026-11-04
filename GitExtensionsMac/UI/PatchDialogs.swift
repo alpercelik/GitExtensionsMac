@@ -189,6 +189,8 @@ private final class PatchViewController: NSViewController, NSTableViewDataSource
                 split.setContentHuggingPriority(.init(1), for: .vertical)
                 viewer.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 100).isActive = true
                 split.setAccessibilityIdentifier("ViewPatch.Split")
+                scroll.frame = NSRect(x: 0, y: 0, width: 600, height: 150)
+                viewer.view.frame = NSRect(x: 0, y: 151, width: 600, height: 300)
                 split.addArrangedSubview(scroll)
                 split.addArrangedSubview(viewer.view)
                 split.setHoldingPriority(.defaultLow + 1, forSubviewAt: 0)

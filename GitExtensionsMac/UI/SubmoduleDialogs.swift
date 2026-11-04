@@ -341,7 +341,7 @@ private final class SubmoduleManagerViewController: NSViewController, NSTableVie
     }
     required init?(coder: NSCoder) { nil }
     override func loadView() {
-        let root = NSView()
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 782, height: 372))
         for (name, width) in [("Name", 110.0), ("Status", 100.0)] {
             let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(name)); column.title = name; column.width = width; table.addTableColumn(column)
             column.minWidth = name == "Name" ? 60 : 100
@@ -401,6 +401,8 @@ private final class SubmoduleManagerViewController: NSViewController, NSTableVie
             constraint.isActive = true
         }
         split.isVertical = true; split.dividerStyle = .thin
+        left.frame = NSRect(x: 0, y: 0, width: 222, height: 300)
+        right.frame = NSRect(x: 223, y: 0, width: 535, height: 300)
         split.addArrangedSubview(left); split.addArrangedSubview(right)
         right.heightAnchor.constraint(equalTo: split.heightAnchor).isActive = true
         left.heightAnchor.constraint(equalTo: split.heightAnchor).isActive = true

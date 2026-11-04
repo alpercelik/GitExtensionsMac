@@ -277,10 +277,12 @@ private final class PullDialogViewController: NSViewController, NSWindowDelegate
         helpImageView.imageAlignment = .alignTopLeft
         helpImageView.translatesAutoresizingMaskIntoConstraints = false
         helpToggle.translatesAutoresizingMaskIntoConstraints = false
+        let helpImageWidth = helpImageView.widthAnchor.constraint(equalToConstant: 307)
+        helpImageWidth.priority = NSLayoutConstraint.Priority(999)
         NSLayoutConstraint.activate([
             helpToggle.widthAnchor.constraint(equalToConstant: 80),
             helpToggle.heightAnchor.constraint(equalToConstant: 26),
-            helpImageView.widthAnchor.constraint(equalToConstant: 307),
+            helpImageWidth,
             helpImageView.heightAnchor.constraint(equalToConstant: 375)
         ])
         let stack = NSStackView(views: [helpToggle, helpNotice, helpImageView])

@@ -86,11 +86,14 @@ final class CommitDetailViewController: NSViewController, NSTextViewDelegate {
         }
         documentView.addSubview(stack)
         documentView.owner = self
+        let stackTrailing = stack.trailingAnchor.constraint(equalTo: documentView.trailingAnchor)
+        let stackBottom = stack.bottomAnchor.constraint(lessThanOrEqualTo: documentView.bottomAnchor)
+        for constraint in [stackTrailing, stackBottom] { constraint.priority = NSLayoutConstraint.Priority(999) }
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: documentView.topAnchor),
             stack.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: documentView.bottomAnchor)
+            stackTrailing,
+            stackBottom
         ])
         scrollView.documentView = documentView
         scrollView.hasVerticalScroller = true

@@ -917,7 +917,10 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
     override func loadView() {
 
         let requestedPage = initialPage ?? Self.lastSelectedPage ?? "application"
-        let root = NSView()
+        let sidebarWidth: CGFloat = 230
+        let contentMinimumWidth = max(600, SettingsSourceHeader.minimumWidth + 36 + NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) + 4)
+        let paneHeight: CGFloat = 640
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: max(1040, 12 + sidebarWidth + 1 + contentMinimumWidth + 12), height: 720))
         let column = NSTableColumn(identifier: .init("Category"))
         column.width = 225
         outlineView.addTableColumn(column)
@@ -937,7 +940,7 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
         searchField.setAccessibilityIdentifier("SettingsSearch")
         searchField.translatesAutoresizingMaskIntoConstraints = false
         sidebar.translatesAutoresizingMaskIntoConstraints = false
-        let sidebarHolder = NSView()
+        let sidebarHolder = NSView(frame: NSRect(x: 0, y: 0, width: sidebarWidth, height: paneHeight))
         sidebarHolder.addSubview(searchField)
         sidebarHolder.addSubview(sidebar)
         NSLayoutConstraint.activate([
@@ -956,7 +959,7 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
         let document = TopAlignedDocumentView()
         document.translatesAutoresizingMaskIntoConstraints = false
         document.addSubview(content)
-        let contentScroll = NSScrollView()
+        let contentScroll = NSScrollView(frame: NSRect(x: sidebarWidth + 1, y: 0, width: contentMinimumWidth, height: paneHeight))
         contentScroll.documentView = document
         contentScroll.hasVerticalScroller = true
         contentScroll.borderType = .bezelBorder
@@ -976,7 +979,7 @@ final class SettingsViewController: NSViewController, NSOutlineViewDataSource, N
         settingsSplit.addArrangedSubview(contentScroll)
         settingsSplit.translatesAutoresizingMaskIntoConstraints = false
         sidebarHolder.widthAnchor.constraint(greaterThanOrEqualToConstant: 220).isActive = true
-        contentScroll.widthAnchor.constraint(greaterThanOrEqualToConstant: max(600, SettingsSourceHeader.minimumWidth + 36 + NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) + 4)).isActive = true
+        contentScroll.widthAnchor.constraint(greaterThanOrEqualToConstant: contentMinimumWidth).isActive = true
 
         let ok = NSButton(title: "OK", target: self, action: #selector(saveAndClose))
         ok.keyEquivalent = "\r"

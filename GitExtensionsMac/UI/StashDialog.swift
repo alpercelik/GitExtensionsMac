@@ -144,6 +144,7 @@ private final class StashViewController: RetainingSplitViewController, NSWindowD
         super.viewDidLoad()
         splitView.isVertical = true
         splitView.dividerStyle = .paneSplitter
+        splitView.frame = NSRect(x: 0, y: 0, width: 708, height: 520)
 
         configureLeadingView()
         let leadingItem = NSSplitViewItem(viewController: leadingController)
@@ -214,7 +215,7 @@ private final class StashViewController: RetainingSplitViewController, NSWindowD
     }
 
     private func configureLeadingView() {
-        let root = NSView()
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 600))
         let showLabel = NSTextField(labelWithString: "Show:")
         showLabel.font = AppSettingsStore.shared.applicationFont(size: 12)
         selector.target = self

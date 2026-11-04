@@ -14,6 +14,7 @@ final class BlameWindowController: NSWindowController, NSWindowDelegate {
          hostedRemotes: @escaping () async -> [HostedRemote], showChanges: @escaping (ObjectID) -> Void) {
         let split = RetainingSplitViewController(resizeBehavior: .fixedLeadingPane)
         split.splitView.isVertical = false
+        split.splitView.frame = NSRect(x: 0, y: 0, width: 784, height: 762)
         super.init(window: nil)
         infoController.source = infoSource
         split.addSplitViewItem(NSSplitViewItem(viewController: infoController))

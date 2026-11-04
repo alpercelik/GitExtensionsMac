@@ -26,7 +26,9 @@ final class FilePreviewPresentation<Value: Sendable>: NSObject {
 
     func install(in view: NSView) {
         view.addSubview(button)
-        NSLayoutConstraint.activate([button.centerXAnchor.constraint(equalTo: view.centerXAnchor), button.centerYAnchor.constraint(equalTo: view.centerYAnchor), button.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 12), button.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -12)])
+        let margins = [button.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 12), button.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -12)]
+        margins.forEach { $0.priority = NSLayoutConstraint.Priority(999) }
+        NSLayoutConstraint.activate([button.centerXAnchor.constraint(equalTo: view.centerXAnchor), button.centerYAnchor.constraint(equalTo: view.centerYAnchor)] + margins)
     }
 
     func cancel() {

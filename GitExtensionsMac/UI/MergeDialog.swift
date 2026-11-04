@@ -207,7 +207,9 @@ private final class MergeDialogViewController: NSViewController, NSWindowDelegat
         targetCombo.delegate = self
         targetCombo.addItems(withObjectValues: targets.map(\.title))
         targetCombo.translatesAutoresizingMaskIntoConstraints = false
-        targetCombo.widthAnchor.constraint(equalToConstant: 296).isActive = true
+        let targetWidth = targetCombo.widthAnchor.constraint(equalToConstant: 296)
+        targetWidth.priority = NSLayoutConstraint.Priority(999)
+        targetWidth.isActive = true
 
         let selectMultiple = AppKitFactory.symbolButton(
             "list.bullet.rectangle",

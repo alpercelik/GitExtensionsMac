@@ -421,11 +421,13 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         let stack = NSStackView(views: [gitActionIcon, rebaseBannerLabel, spacer, rebaseResolveButton, rebaseContinueButton, gitActionAbortButton, gitActionMoreButton])
         stack.orientation = .horizontal; stack.alignment = .centerY; stack.spacing = 7; stack.translatesAutoresizingMaskIntoConstraints = false
         rebaseBanner.addSubview(stack)
+        let stackBottom = stack.bottomAnchor.constraint(equalTo: rebaseBanner.bottomAnchor, constant: -3)
+        stackBottom.priority = .defaultHigh
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: rebaseBanner.leadingAnchor, constant: 8),
             stack.trailingAnchor.constraint(equalTo: rebaseBanner.trailingAnchor, constant: -8),
             stack.topAnchor.constraint(equalTo: rebaseBanner.topAnchor, constant: 3),
-            stack.bottomAnchor.constraint(equalTo: rebaseBanner.bottomAnchor, constant: -3),
+            stackBottom,
             gitActionIcon.widthAnchor.constraint(equalToConstant: 22)
         ])
         rebaseBanner.isHidden = true
@@ -448,11 +450,13 @@ final class RepositoryBrowserViewController: NSViewController, NSTextFieldDelega
         stack.spacing = 7
         stack.translatesAutoresizingMaskIntoConstraints = false
         bisectBanner.addSubview(stack)
+        let stackBottom = stack.bottomAnchor.constraint(equalTo: bisectBanner.bottomAnchor, constant: -3)
+        stackBottom.priority = .defaultHigh
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: bisectBanner.leadingAnchor, constant: 8),
             stack.trailingAnchor.constraint(equalTo: bisectBanner.trailingAnchor, constant: -8),
             stack.topAnchor.constraint(equalTo: bisectBanner.topAnchor, constant: 3),
-            stack.bottomAnchor.constraint(equalTo: bisectBanner.bottomAnchor, constant: -3),
+            stackBottom,
             icon.widthAnchor.constraint(equalToConstant: 22)
         ])
         bisectBanner.isHidden = true

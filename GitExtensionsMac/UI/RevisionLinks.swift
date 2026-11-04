@@ -277,7 +277,7 @@ final class RevisionLinksSettingsEditor: NSView, NSTableViewDataSource, NSTableV
             split.leadingAnchor.constraint(equalTo: leadingAnchor), split.trailingAnchor.constraint(equalTo: trailingAnchor),
             split.topAnchor.constraint(equalTo: topAnchor), split.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
-        let left = NSView()
+        let left = NSView(frame: NSRect(x: 0, y: 0, width: 192, height: 600))
         let caption = NSTextField(labelWithString: "Categories")
         let column = NSTableColumn(identifier: .init("Categories"))
         categories.addTableColumn(column)
@@ -330,6 +330,7 @@ final class RevisionLinksSettingsEditor: NSView, NSTableViewDataSource, NSTableV
         detail.alignment = .leading
         detail.spacing = 6
         detail.edgeInsets = NSEdgeInsets(top: 0, left: 8, bottom: 0, right: 0)
+        detail.frame = NSRect(x: 193, y: 0, width: 400, height: 600)
         split.addArrangedSubview(left)
         split.addArrangedSubview(detail)
         detail.widthAnchor.constraint(greaterThanOrEqualToConstant: 350).isActive = true

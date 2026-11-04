@@ -85,7 +85,7 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
     }
 
     override func loadView() {
-        let root = NSView()
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
         table.headerView = nil
         table.intercellSpacing = NSSize(width: 0, height: 0)
         table.usesAlternatingRowBackgroundColors = false
@@ -142,6 +142,7 @@ final class BlameViewController: NSViewController, NSTableViewDataSource, NSTabl
         panes.isVertical = true
         panes.dividerStyle = .thin
         panes.translatesAutoresizingMaskIntoConstraints = false
+        authorScroll.frame = NSRect(x: 0, y: 0, width: defaultAuthorDistance, height: 500)
         panes.addArrangedSubview(authorScroll)
         panes.addArrangedSubview(scroll)
         authorScroll.widthAnchor.constraint(greaterThanOrEqualToConstant: Self.authorPanelMinSize).isActive = true

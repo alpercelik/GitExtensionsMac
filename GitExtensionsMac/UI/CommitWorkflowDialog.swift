@@ -451,6 +451,8 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
         }
         let left = makeFilePane()
         let right = makeMessagePane()
+        left.frame = NSRect(x: 0, y: 0, width: 397, height: 700)
+        right.frame = NSRect(x: 0, y: 0, width: 700, height: 700)
         mainSplit.isVertical = true
         mainSplit.dividerStyle = .paneSplitter
         mainSplit.addArrangedSubview(left)
@@ -550,6 +552,8 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
         configureSelectionFilterBar()
         let top = stacked(selectionFilterBar, topTools, unstagedFilter, unstagedScroll)
         let bottom = stacked(transfer, bottomTools, stagedFilter, stagedScroll)
+        top.frame = NSRect(x: 0, y: 0, width: 397, height: 274)
+        bottom.frame = NSRect(x: 0, y: 0, width: 397, height: 420)
         fileSplit.isVertical = false
         fileSplit.dividerStyle = .paneSplitter
         fileSplit.addArrangedSubview(top)
@@ -692,6 +696,8 @@ private final class CommitWorkflowViewController: NSViewController, NSOutlineVie
         editor.heightAnchor.constraint(equalTo: messageSplit.heightAnchor).isActive = true
         editor.trailingAnchor.constraint(equalTo: messageSplit.trailingAnchor).isActive = true
 
+        commitDiffView.frame = NSRect(x: 0, y: 0, width: 700, height: 268)
+        messageSplit.frame = NSRect(x: 0, y: 0, width: 700, height: 426)
         contentSplit.isVertical = false
         contentSplit.dividerStyle = .paneSplitter
         contentSplit.addArrangedSubview(commitDiffView)
