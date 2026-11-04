@@ -38,13 +38,15 @@ jobs:
             -configuration Release \
             -destination 'platform=macOS' \
             -derivedDataPath .build/DerivedData \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Test
         env:
           TEST_DERIVED_DATA: .build/DerivedData
           TEST_RESULTS_DIR: .build/test-results
-        run: Scripts/test.sh all
+        run: Scripts/test.sh all -skipPackagePluginValidation -skipMacroValidation
 
       - name: Upload test results
         if: failure()
