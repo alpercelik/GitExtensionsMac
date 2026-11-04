@@ -1,0 +1,39 @@
+name: Feature request
+description: Request a missing Git Extensions feature or propose an improvement
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        GitExtensionsMac aims for parity with [Git Extensions](https://github.com/gitextensions/gitextensions). Requests for upstream features that are missing or behave differently are the most likely to be accepted.
+
+        ⚠️ Review existing issues to see whether someone else has already requested this feature.
+        📖 Please also read [CONTRIBUTING.md](https://github.com/norgera/GitExtensionsMac/blob/main/CONTRIBUTING.md).
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request type
+      options:
+        - Git Extensions feature missing from GitExtensionsMac
+        - Behaves differently from Git Extensions
+        - macOS integration
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature description
+      description: Describe the feature clearly. For parity requests, describe how Git Extensions on Windows behaves, ideally with screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: about
+    attributes:
+      label: Environment
+      description: Use _Help > Report an issue_ in GitExtensionsMac to copy this information to the clipboard automatically.
+      value: |
+        - GitExtensionsMac version:
+        - macOS version:
+    validations:
+      required: false

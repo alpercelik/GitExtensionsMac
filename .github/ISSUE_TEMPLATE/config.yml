@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/norgera/GitExtensionsMac/discussions
+    about: Ask questions about GitExtensionsMac here
+  - name: Issue with Git Extensions on Windows
+    url: https://github.com/gitextensions/gitextensions/issues
+    about: Issues with the Windows app belong in the upstream Git Extensions repository

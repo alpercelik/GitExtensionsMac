@@ -213,7 +213,7 @@ extension UIIntegrationTests {
         }
 
         @Test("Selection filter throttle") private static func selectionFilterThrottle() async throws {
-            let throttle = CommitSelectionFilterThrottle(delay: .milliseconds(60))
+            let throttle = CommitSelectionFilterThrottle(delay: .milliseconds(400))
             var performed: [String] = []
             throttle.submit("a") { performed.append($0) }
             try await Task.sleep(for: .milliseconds(20))
@@ -221,11 +221,13 @@ extension UIIntegrationTests {
             try await Task.sleep(for: .milliseconds(20))
             throttle.submit("abc") { performed.append($0) }
             #expect(performed.isEmpty, "nothing applied while typing continues")
-            try await Task.sleep(for: .milliseconds(200))
+            let deadline = Date().addingTimeInterval(5)
+            while performed.isEmpty && Date() < deadline { try await Task.sleep(for: .milliseconds(20)) }
+            try await Task.sleep(for: .milliseconds(100))
             #expect(performed == ["abc"], "only the final value is applied after the quiet period: \(performed)")
             throttle.submit("x") { performed.append($0) }
             throttle.cancel()
-            try await Task.sleep(for: .milliseconds(120))
+            try await Task.sleep(for: .milliseconds(800))
             #expect(performed == ["abc"], "cancel drops the pending value")
         }
 

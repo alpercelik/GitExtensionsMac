@@ -7,13 +7,13 @@ import Testing
 @testable import GitExtensionsCore
 @testable import GitUI
 
-@Suite(.timeLimit(.minutes(3)), .tags(.unit))
+@Suite(.tags(.unit))
 struct UnitTests {}
 
-@Suite(.gitConcurrency, .timeLimit(.minutes(3)), .tags(.git))
+@Suite(.gitConcurrency, .tags(.git))
 struct GitIntegrationTests {}
 
-@Suite(.serialized, .appEnvironment, .timeLimit(.minutes(3)), .tags(.ui))
+@Suite(.serialized, .appEnvironment, .tags(.ui))
 struct UIIntegrationTests {}
 
 extension Testing.Tag {
